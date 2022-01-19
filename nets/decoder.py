@@ -11,12 +11,12 @@ class Sketch_Decoder_Part(nn.Module):
         self.ResBlock = ResnetBlock(input_nc, norm_type=norm, pad_type=pad_type)
         
         # downsample
-        self.DownBlock1 = ConvBlock(input_nc, 512, 3, stride=2, conv_padding=1, transpose=True, pad_type='none', norm=norm, activation=activation)
-        self.DownBlock2 = ConvBlock(512, 256, 3, stride=2, conv_padding=1, transpose=True, pad_type='none', norm=norm, activation=activation)
-        self.DownBlock3 = ConvBlock(256, 128, 3, stride=2, conv_padding=1, transpose=True, pad_type='none', norm=norm, activation=activation)
-        self.DownBlock4 = ConvBlock(128, 64, 3, stride=2, conv_padding=1, transpose=True, pad_type='none', norm=norm, activation=activation)
+        self.DownBlock1 = ConvBlock(input_nc, 256, 3, stride=2, conv_padding=1, transpose=True, norm=norm, activation=activation)
+        self.DownBlock2 = ConvBlock(256, 256, 3, stride=2, conv_padding=1, transpose=True, norm=norm, activation=activation)
+        self.DownBlock3 = ConvBlock(256, 128, 3, stride=2, conv_padding=1, transpose=True, norm=norm, activation=activation)
+        self.DownBlock4 = ConvBlock(128, 64, 3, stride=2, conv_padding=1, transpose=True, norm=norm, activation=activation)
         
-        self.Block = ConvBlock(64, output_nc, 7, stride=1, pad_type=pad_type, padding=3, norm=norm, activation=activation)
+        self.Block = ConvBlock(64, output_nc, 7, stride=1, pad_type=pad_type, conv_padding=3, norm=norm, activation=activation)
     
     def forward(self,input):
         x = self.ResBlock(input)

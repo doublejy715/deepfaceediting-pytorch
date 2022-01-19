@@ -14,12 +14,12 @@ class Local_Generator(nn.Module):
         self.ResBlock3 = ResnetBlock(input_nc, norm_type=norm, pad_type=pad_type)
         self.ResBlock4 = ResnetBlock(input_nc, norm_type=norm, pad_type=pad_type)
 
-        self.ConvBlock1 = ConvBlock(input_nc, 512, 3, stride=2, conv_padding=1, transpose=True, pad_type='none', norm=norm, activation=activation)
-        self.ConvBlock2 = ConvBlock(512, 256, 3, stride=2, conv_padding=1, transpose=True, pad_type='none', norm=norm, activation=activation)
-        self.ConvBlock3 = ConvBlock(256, 128, 3, stride=2, conv_padding=1, transpose=True, pad_type='none', norm=norm, activation=activation)
-        self.ConvBlock4 = ConvBlock(128, 64, 3, stride=2, conv_padding=1, transpose=True, pad_type='none', norm=norm, activation=activation)
+        self.ConvBlock1 = ConvBlock(input_nc, 512, 3, stride=2, conv_padding=1, transpose=True, norm=norm, activation=activation)
+        self.ConvBlock2 = ConvBlock(512, 256, 3, stride=2, conv_padding=1, transpose=True, norm=norm, activation=activation)
+        self.ConvBlock3 = ConvBlock(256, 128, 3, stride=2, conv_padding=1, transpose=True, norm=norm, activation=activation)
+        self.ConvBlock4 = ConvBlock(128, 64, 3, stride=2, conv_padding=1, transpose=True, norm=norm, activation=activation)
         
-        self.ConvBlock5 = ConvBlock(64, output_nc, 7, stride=1, pad_type=pad_type, padding=3, norm='none', activation='tanh')
+        self.ConvBlock5 = ConvBlock(64, output_nc, 7, stride=1, pad_type=pad_type, conv_padding=3, norm='zeros', activation='tanh')
 
     def forward(self, input):
         x = self.ResBlock1(input)
@@ -39,13 +39,13 @@ class Local_Generator(nn.Module):
 class Global_Generator(nn.Module):
     def __init__(self, input_nc=64, output_nc=3, pad_type='reflect', norm='in', activation='relu'):
         super(Global_Generator, self).__init__()        
-        self.ConvBlock1 = ConvBlock(input_nc, 64, 7, stride=1, pad_type=pad_type, padding=3, norm=norm, activation=activation)
+        self.ConvBlock1 = ConvBlock(input_nc, 64, 7, stride=1, pad_type=pad_type, conv_padding=3, norm=norm, activation=activation)
         
         # downsample
-        self.DownBlock1 = ConvBlock(64, 128, 3, stride=2, conv_padding=1, pad_type='none', norm=norm, activation=activation)
-        self.DownBlock2 = ConvBlock(128, 256, 3, stride=2, conv_padding=1, pad_type='none', norm=norm, activation=activation)
-        self.DownBlock3 = ConvBlock(256, 512, 3, stride=2, conv_padding=1, pad_type='none', norm=norm, activation=activation)
-        self.DownBlock4 = ConvBlock(512, 1024, 3, stride=2, conv_padding=1, pad_type='none', norm=norm, activation=activation)
+        self.DownBlock1 = ConvBlock(64, 128, 3, stride=2, conv_padding=1, norm=norm, activation=activation)
+        self.DownBlock2 = ConvBlock(128, 256, 3, stride=2, conv_padding=1, norm=norm, activation=activation)
+        self.DownBlock3 = ConvBlock(256, 512, 3, stride=2, conv_padding=1, norm=norm, activation=activation)
+        self.DownBlock4 = ConvBlock(512, 1024, 3, stride=2, conv_padding=1, norm=norm, activation=activation)
 
         # resnet blocks
         self.ResBlock1 = ResnetBlock(1024, norm_type=norm, pad_type=pad_type)
@@ -53,12 +53,12 @@ class Global_Generator(nn.Module):
         self.ResBlock3 = ResnetBlock(1024, norm_type=norm, pad_type=pad_type)
         self.ResBlock4 = ResnetBlock(1024, norm_type=norm, pad_type=pad_type)
 
-        self.UpBlock1 = ConvBlock(1024, 512, 3, stride=2, conv_padding=1, transpose=True, pad_type='none', norm=norm, activation=activation)
-        self.UpBlock2 = ConvBlock(512, 256, 3, stride=2, conv_padding=1, transpose=True, pad_type='none', norm=norm, activation=activation)
-        self.UpBlock3 = ConvBlock(256, 128, 3, stride=2, conv_padding=1, transpose=True, pad_type='none', norm=norm, activation=activation)
-        self.UpBlock4 = ConvBlock(128, 64, 3, stride=2, conv_padding=1, transpose=True, pad_type='none', norm=norm, activation=activation)
+        self.UpBlock1 = ConvBlock(1024, 512, 3, stride=2, conv_padding=1, transpose=True, norm=norm, activation=activation)
+        self.UpBlock2 = ConvBlock(512, 256, 3, stride=2, conv_padding=1, transpose=True, norm=norm, activation=activation)
+        self.UpBlock3 = ConvBlock(256, 128, 3, stride=2, conv_padding=1, transpose=True, norm=norm, activation=activation)
+        self.UpBlock4 = ConvBlock(128, 64, 3, stride=2, conv_padding=1, transpose=True, norm=norm, activation=activation)
 
-        self.ConvBlock2 = ConvBlock(64, output_nc, 7, stride=1, pad_type=pad_type, padding=3, norm='none', activation='tanh')
+        self.ConvBlock2 = ConvBlock(64, output_nc, 7, stride=1, pad_type=pad_type, conv_padding=3, norm='none', activation='tanh')
             
     def forward(self, input):
         x = self.ConvBlock1(input)

@@ -3,6 +3,8 @@ datasets
 results
 training_result
 wandb
+record.txt
+command.txt
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

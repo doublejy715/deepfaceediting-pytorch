@@ -20,8 +20,8 @@ def train(gpu, args):
     torch.cuda.set_device(gpu)
 
     # build model
-    E = Sketch_Encoder_Part(3,1024).cuda(gpu).train()
-    D = Sketch_Decoder_Part(1024,3).cuda(gpu).train()
+    E = Sketch_Encoder_Part(3,256).cuda(gpu).train()
+    D = Sketch_Decoder_Part(256,3).cuda(gpu).train()
     
     # load and initialize the optimizer
     opt = optim.Adam([*E.parameters(),*D.parameters()], lr=args.lr, betas=(args.beta1, 0.999))
@@ -67,6 +67,7 @@ def train(gpu, args):
 
     global_step = -1
     while global_step < args.max_step:
+        print(global_step)
         global_step += 1
         try:
             sketch_real = next(training_batch_iterator)
@@ -88,7 +89,7 @@ def train(gpu, args):
         utils.update_net(opt, loss)
 
         # log and print loss
-        if args.isMaster and global_step % args.loss_cycle==0:
+        # if args.isMaster and global_step % args.loss_cycle==0:
             
             # log loss on wandb
             wandb.log(loss_collector.loss_dict)

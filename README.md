@@ -7,5 +7,9 @@ Refactoring deepfaceediting
 ### train
 > python scripts/train.py
 
+
+
 ### test
 > python scripts/test.py
+
+

@@ -8,13 +8,13 @@ class Sketch_Encoder_Part(nn.Module):
     def __init__(self, input_nc, output_nc, pad_type='reflect', norm="in", activation='relu'):
         super(Sketch_Encoder_Part, self).__init__() 
         
-        self.Block = ConvBlock(input_nc, 64, 7, stride=1, pad_type=pad_type, padding=3, norm=norm, activation=activation)
+        self.Block = ConvBlock(input_nc, 64, 7, stride=1, pad_type=pad_type, conv_padding=3, norm=norm, activation=activation)
         
         # downsample
-        self.DownBlock1 = ConvBlock(64, 128, 3, stride=2, conv_padding=1, pad_type='none', norm=norm, activation=activation)
-        self.DownBlock2 = ConvBlock(128, 256, 3, stride=2, conv_padding=1, pad_type='none', norm=norm, activation=activation)
-        self.DownBlock3 = ConvBlock(256, 512, 3, stride=2, conv_padding=1, pad_type='none', norm=norm, activation=activation)
-        self.DownBlock4 = ConvBlock(512, output_nc, 3, stride=2, conv_padding=1, pad_type='none', norm=norm, activation=activation)
+        self.DownBlock1 = ConvBlock(64, 128, 3, stride=2, conv_padding=1, norm=norm, activation=activation)
+        self.DownBlock2 = ConvBlock(128, 256, 3, stride=2, conv_padding=1, norm=norm, activation=activation)
+        self.DownBlock3 = ConvBlock(256, 256, 3, stride=2, conv_padding=1, norm=norm, activation=activation)
+        self.DownBlock4 = ConvBlock(256, output_nc, 3, stride=2, conv_padding=1, norm=norm, activation=activation)
         
         # resnet block
         self.ResBlock = ResnetBlock(output_nc, norm_type=norm, pad_type=pad_type)
@@ -33,12 +33,12 @@ class Image_Encoder_Part(nn.Module):
     def __init__(self, input_nc, output_nc, pad_type='reflect', norm="in", activation='relu'):
         super(Sketch_Encoder_Part, self).__init__()
 
-        self.Block = ConvBlock(input_nc, 64, 7, stride=1, padding_type=pad_type, padding=3, norm=norm, activation=activation)
+        self.Block = ConvBlock(input_nc, 64, 7, stride=1, pad_type=pad_type, conv_padding=3, norm=norm, activation=activation)
         # downsample
-        self.DownBlock1 = ConvBlock(64, 128, 3, stride=2, conv_padding=1, pad_type='none', norm=norm, activation=activation)
-        self.DownBlock2 = ConvBlock(128, 256, 3, stride=2, conv_padding=1, pad_type='none', norm=norm, activation=activation)
-        self.DownBlock3 = ConvBlock(256, 512, 3, stride=2, conv_padding=1, pad_type='none', norm=norm, activation=activation)
-        self.DownBlock4 = ConvBlock(512, output_nc, 3, stride=2, conv_padding=1, pad_type='none', norm=norm, activation=activation)
+        self.DownBlock1 = ConvBlock(64, 128, 3, stride=2, conv_padding=1, norm=norm, activation=activation)
+        self.DownBlock2 = ConvBlock(128, 256, 3, stride=2, conv_padding=1, norm=norm, activation=activation)
+        self.DownBlock3 = ConvBlock(256, 512, 3, stride=2, conv_padding=1, norm=norm, activation=activation)
+        self.DownBlock4 = ConvBlock(512, output_nc, 3, stride=2, conv_padding=1, norm=norm, activation=activation)
         
         # resnet block
         self.ResBlock1 = ResnetBlock(output_nc, norm_type=norm, pad_type=pad_type)
@@ -63,16 +63,16 @@ class Image_Encoder_Part(nn.Module):
         return x
 
 class Style_Encoder(nn.Module):
-    def __init__(self, input_cn, style_dim,pad_type='reflect', norm='none',activation='relu'):
+    def __init__(self, input_cn, style_dim, pad_type='reflect', norm='none', activation='relu'):
         super(Style_Encoder, self).__init__()
-        self.ConvBlock1 = ConvBlock(input_cn, 16, 7, stride=1, pad_type=pad_type, padding=3, norm=norm, activation=activation)
+        self.ConvBlock1 = ConvBlock(input_cn, 16, 7, stride=1, pad_type=pad_type, conv_padding=3, norm=norm, activation=activation)
         
-        self.ConvBlock2 = ConvBlock(16, 32, 4, stride=2, pad_type=pad_type, padding=1, norm=norm, activation=activation)
-        self.ConvBlock3 = ConvBlock(32, 64, 4, stride=2, pad_type=pad_type, padding=1, norm=norm, activation=activation)
+        self.ConvBlock2 = ConvBlock(16, 32, 4, stride=2, pad_type=pad_type, conv_padding=1, norm=norm, activation=activation)
+        self.ConvBlock3 = ConvBlock(32, 64, 4, stride=2, pad_type=pad_type, conv_padding=1, norm=norm, activation=activation)
 
-        self.ConvBlock4 = ConvBlock(64, 64, 4, stride=2, pad_type=pad_type, padding=1, norm=norm, activation=activation)
-        self.ConvBlock5 = ConvBlock(64, 64, 4, stride=2, pad_type=pad_type, padding=1, norm=norm, activation=activation)
-        self.ConvBlock6 = ConvBlock(64, 64, 4, stride=2, pad_type=pad_type, padding=1, norm=norm, activation=activation)
+        self.ConvBlock4 = ConvBlock(64, 64, 4, stride=2, pad_type=pad_type, conv_padding=1, norm=norm, activation=activation)
+        self.ConvBlock5 = ConvBlock(64, 64, 4, stride=2, pad_type=pad_type, conv_padding=1, norm=norm, activation=activation)
+        self.ConvBlock6 = ConvBlock(64, 64, 4, stride=2, pad_type=pad_type, conv_padding=1, norm=norm, activation=activation)
         
         self.Gap = nn.AdaptiveAvgPool2d(1)
         self.Conv = nn.Conv2d(64, style_dim, 1, 1, 0)
