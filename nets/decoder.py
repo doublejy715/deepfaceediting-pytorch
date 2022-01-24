@@ -16,13 +16,16 @@ class Sketch_Decoder_Part(nn.Module):
         self.DownBlock3 = ConvBlock(256, 128, 3, stride=2, conv_padding=1, transpose=True, norm=norm, activation=activation)
         self.DownBlock4 = ConvBlock(128, 64, 3, stride=2, conv_padding=1, transpose=True, norm=norm, activation=activation)
         
-        self.Block = ConvBlock(64, output_nc, 7, stride=1, pad_type=pad_type, conv_padding=3, norm=norm, activation=activation)
+        self.Block = ConvBlock(64, output_nc, kernel_size=1, stride=1, pad_type=pad_type, conv_padding=0, norm='none', activation='sig')
     
     def forward(self,input):
-        x = self.ResBlock(input)
-        x = self.DownBlock1(x)
-        x = self.DownBlock2(x)
-        x = self.DownBlock3(x)
-        x = self.DownBlock4(x)
-        x = self.Block(x)
-        return x
+        ft_map_1 = self.ResBlock(input)
+        ft_map_2 = self.DownBlock1(ft_map_1)
+        ft_map_3 = self.DownBlock2(ft_map_2)
+        ft_map_4 = self.DownBlock3(ft_map_3)
+        ft_map_5 = self.DownBlock4(ft_map_4)
+        output = self.Block(ft_map_5)
+
+        layers = [input,ft_map_1,ft_map_2,ft_map_3,ft_map_4,ft_map_5,output]
+
+        return output, layers

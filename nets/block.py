@@ -64,6 +64,8 @@ class ConvBlock(nn.Module):
             self.activation = nn.ReLU()
         elif activation == 'tanh':
             self.activation = nn.Tanh()
+        elif activation == 'sig':
+            self.activation = nn.Sigmoid()
         elif activation == 'none':
             self.activation = None
         else:

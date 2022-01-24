@@ -13,15 +13,15 @@ from opts.train_options import train_options
 from nets.encoder import Sketch_Encoder_Part
 from nets.decoder import Sketch_Decoder_Part
 
-from core.dataset import SketchDataset
+from core.dataset import Sketch_Encoder_Dataset
 
 def train(gpu, args): 
     # set gpu
     torch.cuda.set_device(gpu)
 
     # build model
-    E = Sketch_Encoder_Part(3,256).cuda(gpu).train()
-    D = Sketch_Decoder_Part(256,3).cuda(gpu).train()
+    E = Sketch_Encoder_Part(1,256).cuda(gpu).train()
+    D = Sketch_Decoder_Part(256,1).cuda(gpu).train()
     
     # load and initialize the optimizer
     opt = optim.Adam([*E.parameters(),*D.parameters()], lr=args.lr, betas=(args.beta1, 0.999))
@@ -31,8 +31,8 @@ def train(gpu, args):
     ckptio.geometry_load_ckpt(E, D, opt)
     
     # build a dataset
-    train_set = SketchDataset(f"{args.dataset}/train")
-    #test_set = SketchDataset(f"{args.dataset}/test")
+    train_set = Sketch_Encoder_Dataset(f"{args.dataset}/train/")
+    #test_set = Sketch_Encoder_Dataset(f"{args.dataset}/test")
 
     train_sampler = None
     #test_sampler = None
@@ -67,7 +67,6 @@ def train(gpu, args):
 
     global_step = -1
     while global_step < args.max_step:
-        print(global_step)
         global_step += 1
         try:
             sketch_real = next(training_batch_iterator)
@@ -82,14 +81,14 @@ def train(gpu, args):
         #  train  #
         ###########
         sktech_feature = E(sketch_real)
-        sketch_recon = D(sktech_feature)
+        sketch_recon,_ = D(sktech_feature)
 
         loss = loss_collector.get_L1_loss(sketch_real, sketch_recon)
 
         utils.update_net(opt, loss)
 
         # log and print loss
-        # if args.isMaster and global_step % args.loss_cycle==0:
+        if args.isMaster and global_step % args.loss_cycle==0:
             
             # log loss on wandb
             wandb.log(loss_collector.loss_dict)

@@ -31,7 +31,7 @@ class Sketch_Encoder_Part(nn.Module):
 # extract feature map from Image
 class Image_Encoder_Part(nn.Module):
     def __init__(self, input_nc, output_nc, pad_type='reflect', norm="in", activation='relu'):
-        super(Sketch_Encoder_Part, self).__init__()
+        super(Image_Encoder_Part, self).__init__()
 
         self.Block = ConvBlock(input_nc, 64, 7, stride=1, pad_type=pad_type, conv_padding=3, norm=norm, activation=activation)
         # downsample

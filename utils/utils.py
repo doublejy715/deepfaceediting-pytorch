@@ -69,13 +69,16 @@ def get_grid_row(images):
     images = images[:8]
 
     # make one row
-    grid_row = torchvision.utils.make_grid(images.detach().cpu(), nrow=images.shape[0]) * 0.5 + 0.5
+    grid_row = torchvision.utils.make_grid(images.detach().cpu(), nrow=images.shape[0])
+    # grid_row = torchvision.utils.make_grid(images.detach().cpu(), nrow=images.shape[0]) * 0.5 + 0.5
+
 
     return grid_row
 
 def test_save_img(image, path):
     image = image.squeeze(0).detach().numpy()
-    image = (np.transpose(image, (1, 2, 0)) + 1) / 2.0 * 255.0
+    # image = (np.transpose(image, (1, 2, 0)) + 1) / 2.0 * 255.0
+    image = np.transpose(image, (1, 2, 0)) * 255.0
     image = np.clip(image, 0, 255).astype(np.uint8)
     image = Image.fromarray(image)
     image.save(path)
