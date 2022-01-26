@@ -8,6 +8,12 @@ import os
 from torch.optim import lr_scheduler
 import functools
 
+def hinge_loss(X, positive=True):
+    if positive:
+        return torch.relu(1-X).mean()
+    else:
+        return torch.relu(X+1).mean()
+
 def get_scheduler(optimizer, opt):
     if opt.lr_policy == 'lambda':
         def lambda_rule(epoch):
@@ -74,6 +80,13 @@ def get_grid_row(images):
 
 
     return grid_row
+
+def get_img_from_generator(image):
+    image = image.squeeze(0).detach().numpy()
+    image = (np.transpose(image, (1, 2, 0)) + 1) / 2.0 * 255.0
+    # image = np.transpose(image, (1, 2, 0)) * 255.0
+    image = np.clip(image, 0, 255).astype(np.uint8)
+    return image
 
 def test_save_img(image, path):
     image = image.squeeze(0).detach().numpy()

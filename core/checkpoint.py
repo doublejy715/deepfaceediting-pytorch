@@ -133,3 +133,41 @@ class ckptIO():
 
         ckpt_path_latest = f'{self.args.save_root}/{self.args.run_id}/ckpt/latest.pt'
         torch.save(ckpt_dict, ckpt_path_latest)
+
+    def LD_module_load_ckpt(self, Sketch_E, Style_E, G, D, opt_G, opt_D):
+        try:
+            # set path
+            ckpt_path = f'{self.args.save_root}/{self.args.ckpt_id}/ckpt/latest.pt'
+            
+            # load ckpt
+            ckpt = torch.load(ckpt_path, map_location=torch.device('cuda'))
+            
+            # load state dict
+            Sketch_E.load_state_dict(ckpt["Sketch_E"], strict=False)
+            Style_E.load_state_dict(ckpt["Style_E"], strict=False)
+            G.load_state_dict(ckpt["G"], strict=False)
+            D.load_state_dict(ckpt["D"], strict=False)
+            opt_G.load_state_dict(ckpt["opt_G"], strict=False)
+            opt_D.load_state_dict(ckpt["opt_D"], strict=False)
+
+
+        except Exception as e:
+            print(e)
+
+    def LD_module_save_ckpt(self, global_step, Sketch_E, Style_E, G, D, opt_G, opt_D):
+        os.makedirs(f'{self.args.save_root}/{self.args.run_id}/ckpt', exist_ok=True)
+
+        ckpt_dict = {
+            "Sketch_E": Sketch_E.state_dict(),
+            "Style_E": Style_E.state_dict(),
+            "G": G.state_dict(),
+            "D": D.state_dict(),
+            "opt_G": opt_G.state_dict(),
+            "opt_D": opt_D.state_dict()
+        }
+
+        ckpt_path = f'{self.args.save_root}/{self.args.run_id}/ckpt/{str({global_step}).zfill(8)}.pt'
+        torch.save(ckpt_dict, ckpt_path)
+
+        ckpt_path_latest = f'{self.args.save_root}/{self.args.run_id}/ckpt/latest.pt'
+        torch.save(ckpt_dict, ckpt_path_latest)

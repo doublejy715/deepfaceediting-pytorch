@@ -8,7 +8,7 @@ sys.path.append(os.getcwd())
 
 from utils import utils
 from core.checkpoint import ckptIO
-from core.sketch_loss import lossCollector
+from core.loss import lossCollector
 from opts.train_options import train_options
 from nets.encoder import Sketch_Encoder_Part, Image_Encoder_Part
 from nets.decoder import Sketch_Decoder_Part
@@ -32,7 +32,7 @@ def train(gpu, args):
 
     # load checkpoint
     ckptio = ckptIO(args)
-    ckptio.img_encoder_load_ckpt_at1st(Sketch_E, Sketch_D, Image_D)
+    ckptio.img_encoder_load_ckpt(Sketch_E, Image_E, Sketch_D, Image_D, opt)
     
     # build a dataset
     train_set = Img_Encoder_Dataset(f"{args.dataset}/train")

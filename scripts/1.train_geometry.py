@@ -8,7 +8,7 @@ sys.path.append(os.getcwd())
 
 from utils import utils
 from core.checkpoint import ckptIO
-from core.sketch_loss import lossCollector
+from core.loss import lossCollector
 from opts.train_options import train_options
 from nets.encoder import Sketch_Encoder_Part
 from nets.decoder import Sketch_Decoder_Part

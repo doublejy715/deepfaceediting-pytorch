@@ -2,11 +2,12 @@ import torch
 import torch.nn as nn
 
 from nets.block import ResnetBlock, ConvBlock
+from utils.nets_utils import get_num_adain_params
 
 # extract feature map from sketch
-class Sketch_Encoder_Part(nn.Module):
-    def __init__(self, input_nc, output_nc, pad_type='reflect', norm="in", activation='relu'):
-        super(Sketch_Encoder_Part, self).__init__() 
+class Sketch_Encoder(nn.Module):
+    def __init__(self, input_nc,output_nc=0, pad_type='reflect', norm="in", activation='relu'):
+        super(Sketch_Encoder, self).__init__() 
         
         self.Block = ConvBlock(input_nc, 64, 7, stride=1, pad_type=pad_type, conv_padding=3, norm=norm, activation=activation)
         
@@ -63,8 +64,10 @@ class Image_Encoder_Part(nn.Module):
         return x
 
 class Style_Encoder(nn.Module):
-    def __init__(self, input_cn, style_dim, pad_type='reflect', norm='none', activation='relu'):
+    def __init__(self, input_cn, G, pad_type='reflect', norm='none', activation='relu'):
         super(Style_Encoder, self).__init__()
+        self.style_dim = get_num_adain_params(G)
+
         self.ConvBlock1 = ConvBlock(input_cn, 16, 7, stride=1, pad_type=pad_type, conv_padding=3, norm=norm, activation=activation)
         
         self.ConvBlock2 = ConvBlock(16, 32, 4, stride=2, pad_type=pad_type, conv_padding=1, norm=norm, activation=activation)
@@ -75,7 +78,7 @@ class Style_Encoder(nn.Module):
         self.ConvBlock6 = ConvBlock(64, 64, 4, stride=2, pad_type=pad_type, conv_padding=1, norm=norm, activation=activation)
         
         self.Gap = nn.AdaptiveAvgPool2d(1)
-        self.Conv = nn.Conv2d(64, style_dim, 1, 1, 0)
+        self.Conv = nn.Conv2d(64, self.style_dim, 1, 1, 0)
 
     def execute(self, input):
         x = self.ConvBlock1(input)
