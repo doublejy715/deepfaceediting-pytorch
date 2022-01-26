@@ -1,25 +1,21 @@
 from utils import utils
 import time
 import numpy as np
-import math
 
 import torch
 import torch.nn as nn
 import torchvision
 from torch.nn.functional import grid_sample
 
-from nets.discriminator import MultiscaleDiscriminator
-from utils.nets_utils import get_norm_layer, weights_init
-
 class lossCollector():
-    def __init__(self, args,FM_D):
+    def __init__(self, args, FM_D):
         super(lossCollector, self).__init__()
         self.args = args
         self.start_time = time.time()
         self.loss_dict = {}
         self.L1 = torch.nn.L1Loss()
         self.L2 = torch.nn.MSELoss()
-        self.loss_VGG = VGGPerceptualLoss()
+        self.loss_VGG = VGGPerceptualLoss().cuda(args.gpu_id)
         self.loss_LAB = LabColorLoss()
         self.FM_D = FM_D
 
@@ -140,23 +136,23 @@ class lossCollector():
     def get_adv_loss(self, d_geo_real, d_app_real, d_recon_geo_img, d_recon_app_img, d_mix_img):
         L_adv = 0.0
         if self.args.W_adv_geo:
-            L_adv_geo = self.args.W_adv_geo * math.log10(d_geo_real).mean()
+            L_adv_geo = self.args.W_adv_geo * torch.mean(torch.log10(d_geo_real[0][0]))
             L_adv += L_adv_geo
 
         if self.args.W_adv_app:
-            L_adv_app = self.args.W_adv_app * math.log10(d_app_real).mean()
+            L_adv_app = self.args.W_adv_app * torch.mean(torch.log10(d_app_real[0][0]))
             L_adv += L_adv_app
 
         if self.args.W_adv_recon_geo:
-            L_adv_recon_geo = self.args.W_adv_recon_geo * (1-math.log10(d_recon_geo_img)).mean()
+            L_adv_recon_geo = self.args.W_adv_recon_geo * torch.mean((1-torch.log10(d_recon_geo_img[0][0])))
             L_adv += L_adv_recon_geo
 
         if self.args.W_adv_recon_app:
-            L_adv_recon_app = self.args.W_adv_recon_app * (1-math.log10(d_recon_app_img)).mean()
+            L_adv_recon_app = self.args.W_adv_recon_app * torch.mean((1-torch.log10(d_recon_app_img[0][0])))
             L_adv += L_adv_recon_app
         
         if self.args.W_adv_mix:
-            L_adv_mix = self.args.W_adv_mix * (1-math.log10(d_mix_img)).mean()
+            L_adv_mix = self.args.W_adv_mix * torch.mean((1-torch.log10(d_mix_img[0][0])))
             L_adv += L_adv_mix
 
         # save in dict
@@ -195,23 +191,23 @@ class lossCollector():
     def get_loss_D(self, d_geo_real, d_app_real, d_recon_geo_img, d_recon_app_img, d_mix_img):
         L_D = 0.0
         if self.args.W_D_geo:
-            L_D_geo = self.args.W_D_geo * math.log10(d_geo_real).mean()
+            L_D_geo = self.args.W_D_geo * torch.mean(torch.log10(d_geo_real[0][0]))
             L_D += L_D_geo
 
         if self.args.W_D_app:
-            L_D_app = self.args.W_D_app * math.log10(d_app_real).mean()
+            L_D_app = self.args.W_D_app * torch.mean(torch.log10(d_app_real[0][0]))
             L_D += L_D_app
 
         if self.args.W_D_recon_geo:
-            L_D_recon_geo = self.args.W_D_recon_geo * (1-math.log10(d_recon_geo_img)).mean()
+            L_D_recon_geo = self.args.W_D_recon_geo * torch.mean((1-torch.log10(d_recon_geo_img[0][0])))
             L_D += L_D_recon_geo
 
         if self.args.W_D_recon_app:
-            L_D_recon_app = self.args.W_D_recon_app * (1-math.log10(d_recon_app_img)).mean()
+            L_D_recon_app = self.args.W_D_recon_app * torch.mean((1-torch.log10(d_recon_app_img[0][0])))
             L_D += L_D_recon_app
         
         if self.args.W_D_mix:
-            L_D_mix = self.args.W_D_mix * (1-math.log10(d_mix_img)).mean()
+            L_D_mix = self.args.W_D_mix * torch.mean((1-torch.log10(d_mix_img[0][0])))
             L_D += L_D_mix
 
         # save in dict
@@ -242,7 +238,7 @@ class lossCollector():
 class LabColorLoss(nn.Module):
     def __init__(self):
         super(LabColorLoss, self).__init__()
-        self.balance_Lab = True
+        self.balance_Lab = False
         self.FloatTensor = torch.cuda.FloatTensor
         self.criterion = nn.L1Loss()
         self.M = torch.tensor([[0.412453, 0.357580, 0.180423], [0.212671, 0.715160, 0.072169], [0.019334, 0.119193, 0.950227]])
@@ -279,8 +275,9 @@ class LabColorLoss(nn.Module):
     def f(self, input):
         output = input * 1
         mask = input > 0.008856
+        un_mask = input <= 0.008856
         output[mask] = torch.pow(input[mask], 1 / 3)
-        output[1 - mask] = 7.787 * input[1 - mask] + 0.137931
+        output[un_mask] = 7.787 * input[un_mask] + 0.137931
         return output
 
     def rgb2xyz(self, input):
@@ -309,8 +306,9 @@ class LabColorLoss(nn.Module):
         xyz_f = self.f(input)
         # compute l
         mask = input[:, 1, :, :] > 0.008856
+        unmask = input[:, 1, :, :] <= 0.008856
         output[:, 0, :, :][mask] = 116 * xyz_f[:, 1, :, :][mask] - 16
-        output[:, 0, :, :][1 - mask] = 903.3 * input[:, 1, :, :][1 - mask]
+        output[:, 0, :, :][unmask] = 903.3 * input[:, 1, :, :][unmask]
 
         # compute a
         output[:, 1, :, :] = 500 * (xyz_f[:, 0, :, :] - xyz_f[:, 1, :, :])

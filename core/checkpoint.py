@@ -134,6 +134,20 @@ class ckptIO():
         ckpt_path_latest = f'{self.args.save_root}/{self.args.run_id}/ckpt/latest.pt'
         torch.save(ckpt_dict, ckpt_path_latest)
 
+    def LD_module_load_ckpt_at_first(self, E):
+        try:
+            # set path
+            ckpt_path = f'{self.args.save_root}/{self.args.ckpt_id}/ckpt/latest.pt'
+            
+            # load ckpt
+            ckpt = torch.load(ckpt_path, map_location=torch.device('cuda'))
+            
+            # load state dict
+            E.load_state_dict(ckpt["Image_E"], strict=False)
+
+        except Exception as e:
+            print(e)
+
     def LD_module_load_ckpt(self, Sketch_E, Style_E, G, D, opt_G, opt_D):
         try:
             # set path

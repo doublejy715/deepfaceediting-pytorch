@@ -25,7 +25,7 @@ class Sketch_Encoder_Dataset(Dataset):
 class Img_Encoder_Dataset(Dataset):
     def __init__(self,data_path):
         self.img_dataset = sorted(glob.glob(data_path+'/image/*.*'))
-        self.sketch_dataset = sorted(glob.glob(data_path+'/sketch/*.*'))
+        self.sketch_dataset = sorted(glob.glob(data_path+'/geo/*.*'))
         self.transforms = transforms.Compose([
             transforms.Resize((256,256)),
             transforms.ToTensor(),
@@ -33,8 +33,8 @@ class Img_Encoder_Dataset(Dataset):
         
     def __getitem__(self, idx):
         img = Image.open(self.img_dataset[idx])
-        sketch = Image.open(self.sketch_dataset[idx]).convert("L")
-        return self.transforms(img), self.transforms(sketch)
+        geo = Image.open(self.geo_dataset[idx])#.convert("L")
+        return self.transforms(img), self.transforms(geo)
 
     def __len__(self):
         return len(self.img_dataset)
@@ -42,16 +42,16 @@ class Img_Encoder_Dataset(Dataset):
 class LD_G_Dataset(Dataset):
     def __init__(self,data_path):
         self.img_dataset = glob.glob(data_path+'/image/*.*')
-        self.sketch_dataset = glob.glob(data_path+'/sketch/*.*')
+        self.geo_dataset = glob.glob(data_path+'/geo/*.*')
         self.transforms = transforms.Compose([
             transforms.Resize((256,256)),
             transforms.ToTensor(),
         ])
-        
+    # 랜덤
     def __getitem__(self, idx):
         img = Image.open(self.img_dataset[idx])
-        sketch = Image.open(self.sketch_dataset[idx]).convert("L")
-        return self.transforms(img), self.transforms(sketch)
+        geo = Image.open(random.choice(self.geo_dataset))#.convert("L")
+        return self.transforms(img), self.transforms(geo)
 
     def __len__(self):
         return len(self.img_dataset)

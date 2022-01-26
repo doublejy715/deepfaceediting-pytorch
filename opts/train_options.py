@@ -20,7 +20,7 @@ def train_options():
     parser.add_argument('--save_root', type=str, default="training_result")
 
     # hyperparameters
-    parser.add_argument('--batch_size', type=str, default=4)
+    parser.add_argument('--batch_size', type=str, default=8)
     parser.add_argument('--test_batch_size', type=str, default=1)
     parser.add_argument('--max_step', type=str, default=200000)
 

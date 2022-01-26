@@ -10,8 +10,8 @@ from utils import utils
 from core.checkpoint import ckptIO
 from core.loss import lossCollector
 from opts.train_options import train_options
-from nets.encoder import Sketch_Encoder_Part, Image_Encoder_Part
-from nets.decoder import Sketch_Decoder_Part
+from nets.encoder import Sketch_Encoder, Image_Encoder
+from nets.decoder import Sketch_Decoder
 
 from core.dataset import Img_Encoder_Dataset
 
@@ -20,12 +20,12 @@ def train(gpu, args):
     torch.cuda.set_device(gpu)
 
     # build model
-    Sketch_E = Sketch_Encoder_Part(1,256).cuda(gpu).eval()
-    Sketch_D = Sketch_Decoder_Part(256,1).cuda(gpu).eval()
+    Sketch_E = Sketch_Encoder(1,256).cuda(gpu).eval()
+    Sketch_D = Sketch_Decoder(256,1).cuda(gpu).eval()
 
 
-    Image_E = Image_Encoder_Part(3,256).cuda(gpu).train()
-    Image_D = Sketch_Decoder_Part(256,1).cuda(gpu).eval()
+    Image_E = Image_Encoder(3,256).cuda(gpu).train()
+    Image_D = Sketch_Decoder(256,1).cuda(gpu).eval()
     
     # load and initialize the optimizer
     opt = optim.Adam(Image_E.parameters(), lr=args.lr, betas=(args.beta1, 0.999))

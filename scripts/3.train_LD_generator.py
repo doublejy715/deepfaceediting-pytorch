@@ -11,7 +11,7 @@ from core.checkpoint import ckptIO
 from core.loss import lossCollector
 from core.dataset import LD_G_Dataset
 from opts.train_options import train_options
-from nets.encoder import Sketch_Encoder, Style_Encoder
+from nets.encoder import Image_Encoder, Style_Encoder
 from nets.generator import Local_G
 from nets.discriminator import MultiscaleDiscriminator
 from utils.nets_utils import assign_adain_params
@@ -26,7 +26,7 @@ def train(gpu, args):
     # build models
     G = Local_G(256,3).cuda(gpu).train()
     D = MultiscaleDiscriminator(3).cuda(gpu).train()
-    Sketch_E = Sketch_Encoder(1,256).cuda(gpu).eval()
+    Sketch_E = Image_Encoder(3,256).cuda(gpu).eval()
     Style_E = Style_Encoder(3, G).cuda(gpu).train()
 
         
@@ -64,6 +64,7 @@ def train(gpu, args):
     
     # load checkpoint
     ckptio = ckptIO(args)
+    ckptio.LD_module_load_ckpt_at_first(Sketch_E)
     ckptio.LD_module_load_ckpt(Sketch_E, Style_E, G, D, opt_G, opt_D)
 
     training_batch_iterator = iter(training_data_loader)
@@ -132,7 +133,9 @@ def train(gpu, args):
         utils.update_net(opt_G, loss_G)
 
         # run D : False gradient (use .detach())
-        # 앞에서 같은 과정이 있어도 .detach()로 다시 해준다.
+        # 앞에서 같은 과정이 있어도 .detach()로 다시 해준다. loss_D에 들어가는 모든 것은 loss_G와 분리 시켜 줘야한다.
+        d_geo_real = D(geo_real.detach())
+        d_app_real = D(app_real.detach())
         d_recon_geo_img = D(recon_geo_img.detach())
         d_recon_app_img = D(recon_app_img.detach())
         d_mix_img = D(mix_img.detach())
@@ -140,6 +143,7 @@ def train(gpu, args):
         
         # D loss
         loss_D = loss_collector.get_loss_D(d_geo_real, d_recon_geo_img, d_app_real, d_recon_app_img, d_mix_img)
+        # loss_D = loss_collector.get_loss_D_BCE(d_geo_real, d_recon_geo_img, d_app_real, d_recon_app_img)
         utils.update_net(opt_D, loss_D)
 
         # # # log and print loss
@@ -164,7 +168,7 @@ def train(gpu, args):
             # loss_collector.get_L1_loss(test_sketch_real, test_sketch_recon,test=True)
 
             # utils.save_img(args, global_step, "imgs", [test_sketch_real, test_sketch_recon])
-            utils.save_img(args, global_step, "imgs", [app_real, recon_app_img, mix_img])
+            utils.save_img(args, global_step, "imgs", [app_real, geo_real, recon_app_img, mix_img])
 
         # save ckpt
         if global_step % args.ckpt_cycle == 0:

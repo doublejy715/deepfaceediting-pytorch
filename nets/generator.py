@@ -2,7 +2,6 @@ import torch
 import torch.nn as nn
 
 from nets.block import ResnetBlock, ConvBlock
-from nets.encoder import Style_Encoder
 
 class Local_G(nn.Module):
     def __init__(self, input_nc, output_nc, pad_type='reflect', norm='adain', activation='relu'):
@@ -18,7 +17,7 @@ class Local_G(nn.Module):
         self.ConvBlock4 = ConvBlock(128, 64, 3, stride=2, conv_padding=1, transpose=True, norm=norm, activation=activation)
         
         # feature map to rgb image convert layer
-        self.ConvBlock5 = ConvBlock(64, output_nc, 7, stride=1, pad_type=pad_type, conv_padding=3, norm='zeros', activation='tanh')
+        self.ConvBlock5 = ConvBlock(64, output_nc, 7, stride=1, pad_type=pad_type, conv_padding=3, norm='none', activation='tanh')
 
 
 
