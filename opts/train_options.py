@@ -8,7 +8,7 @@ def train_options():
     parser.add_argument('--gpu_id', type=int, default=0) 
     parser.add_argument('--project_id', type=str, default="deepfaceediting")
     parser.add_argument('--run_id', type=str, required=True) 
-    parser.add_argument('--ckpt_id', type=str, default='sketch_encoder_batch_16_1')
+    parser.add_argument('--ckpt_id', type=str, default='testing_step_2_2')
 
     # dataset
     parser.add_argument("--dataset", type=str, default = "datasets", help = "the path of geometry image")
@@ -25,6 +25,7 @@ def train_options():
     parser.add_argument('--max_step', type=str, default=200000)
 
     # weights
+    # LD
     # Generator
     # Recon
     parser.add_argument('--W_recon', type=int, default=1)
@@ -60,10 +61,11 @@ def train_options():
     parser.add_argument('--W_D_recon_app', type=int, default=0.33)
     parser.add_argument('--W_D_mix', type=int, default=0.33)
 
+
     # learning rate
     parser.add_argument('--lr', type=str, default=4e-4)
-    parser.add_argument('--lr_G', type=str, default=4e-4)
-    parser.add_argument('--lr_D', type=str, default=4e-4)
+    parser.add_argument('--lr_G', type=str, default=4e-4*5)
+    parser.add_argument('--lr_D', type=str, default=4e-4*5)
     parser.add_argument('--beta1', type=str, default=0.5)
 
     # multi GPU
@@ -75,5 +77,6 @@ def train_options():
 
     # etc
     parser.add_argument('--num_works', type=int, default=16, help='number of threads for data loader to use')
+    parser.add_argument('--first_train', action='store_true')
 
     return parser.parse_args()

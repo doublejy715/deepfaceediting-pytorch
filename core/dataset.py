@@ -5,10 +5,10 @@ import glob
 import random
 
 import numpy as np
-
+# step 1
 class Sketch_Encoder_Dataset(Dataset):
     def __init__(self, data_path):
-        self.dataset = sorted(glob.glob(data_path+'sketch/*.*'))
+        self.dataset = sorted(glob.glob(data_path+'geo/*.*'))
         self.transforms = transforms.Compose([
             transforms.Resize((256,256)),
             transforms.ToTensor(),
@@ -21,11 +21,11 @@ class Sketch_Encoder_Dataset(Dataset):
 
     def __len__(self):
         return len(self.dataset)
-
+# step 2
 class Img_Encoder_Dataset(Dataset):
     def __init__(self,data_path):
         self.img_dataset = sorted(glob.glob(data_path+'/image/*.*'))
-        self.sketch_dataset = sorted(glob.glob(data_path+'/geo/*.*'))
+        self.geo_dataset = sorted(glob.glob(data_path+'/geo/*.*'))
         self.transforms = transforms.Compose([
             transforms.Resize((256,256)),
             transforms.ToTensor(),
@@ -33,16 +33,17 @@ class Img_Encoder_Dataset(Dataset):
         
     def __getitem__(self, idx):
         img = Image.open(self.img_dataset[idx])
-        geo = Image.open(self.geo_dataset[idx])#.convert("L")
+        geo = Image.open(self.geo_dataset[idx]).convert("L")
         return self.transforms(img), self.transforms(geo)
 
     def __len__(self):
         return len(self.img_dataset)
 
-class LD_G_Dataset(Dataset):
+# step 3,4
+class Dataset(Dataset):
     def __init__(self,data_path):
         self.img_dataset = glob.glob(data_path+'/image/*.*')
-        self.geo_dataset = glob.glob(data_path+'/geo/*.*')
+        self.geo_dataset = glob.glob(data_path+'/image/*.*')
         self.transforms = transforms.Compose([
             transforms.Resize((256,256)),
             transforms.ToTensor(),
@@ -50,7 +51,7 @@ class LD_G_Dataset(Dataset):
     # 랜덤
     def __getitem__(self, idx):
         img = Image.open(self.img_dataset[idx])
-        geo = Image.open(random.choice(self.geo_dataset))#.convert("L")
+        geo = Image.open(random.choice(self.geo_dataset))
         return self.transforms(img), self.transforms(geo)
 
     def __len__(self):

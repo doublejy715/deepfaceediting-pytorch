@@ -36,7 +36,7 @@ class lossCollector():
     def get_L2_loss(self, a, b):
         return self.L2(a, b)
 
-    # for step 2 loss
+    # step 2
     def get_img_encoder_loss(self, sketch_ftmap_layers, image_ftmap_layers, test=False):
         loss = 0.0
         for sketch_tfmap, image_tfmap in zip(sketch_ftmap_layers, image_ftmap_layers):
@@ -44,6 +44,7 @@ class lossCollector():
 
         return loss
 
+    # step 3,4
     def get_Lab_loss(self,a,b):
         loss = self.loss_LAB(b,a)
         return loss
@@ -64,14 +65,6 @@ class lossCollector():
 
     def get_geo_loss(self,a,b):
         return self.get_L1_loss(a,b)
-
-    def get_hinge_loss(self, Di, label):
-        L_adv = 0
-        for di in Di:
-            L_adv += utils.hinge_loss(di[0], label)
-        return L_adv
-
-    # for step 3 loss
 
     def get_recon_loss(self,a,b):
         L_recon = 0.0
@@ -219,7 +212,6 @@ class lossCollector():
         self.loss_dict["L_D_mix"] = round(L_D_mix.item(), 4)
         
         return L_D
-
 
     def print_loss(self, global_step):
         seconds = int(time.time() - self.start_time)

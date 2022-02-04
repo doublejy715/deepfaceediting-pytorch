@@ -10,8 +10,8 @@ from utils import utils
 from core.checkpoint import ckptIO
 from core.loss import lossCollector
 from opts.train_options import train_options
-from nets.encoder import Sketch_Encoder_Part
-from nets.decoder import Sketch_Decoder_Part
+from nets.encoder import Sketch_Encoder
+from nets.decoder import Sketch_Decoder
 
 from core.dataset import Sketch_Encoder_Dataset
 
@@ -20,15 +20,15 @@ def train(gpu, args):
     torch.cuda.set_device(gpu)
 
     # build model
-    E = Sketch_Encoder_Part(1,256).cuda(gpu).train()
-    D = Sketch_Decoder_Part(256,1).cuda(gpu).train()
+    Sketch_E = Sketch_Encoder(1,256).cuda(gpu).train()
+    Sketch_D = Sketch_Decoder(256,1).cuda(gpu).train()
     
     # load and initialize the optimizer
-    opt = optim.Adam([*E.parameters(),*D.parameters()], lr=args.lr, betas=(args.beta1, 0.999))
+    opt = optim.Adam([*Sketch_E.parameters(),*Sketch_D.parameters()], lr=args.lr, betas=(args.beta1, 0.999))
 
     # load checkpoint
     ckptio = ckptIO(args)
-    ckptio.geometry_load_ckpt(E, D, opt)
+    ckptio.geometry_load_ckpt(Sketch_E, Sketch_D, opt)
     
     # build a dataset
     train_set = Sketch_Encoder_Dataset(f"{args.dataset}/train/")
@@ -44,8 +44,8 @@ def train(gpu, args):
         utils.setup_ddp(gpu, args.gpu_num)
 
         # Distributed Data Parallel
-        E = torch.nn.parallel.DistributedDataParallel(E, device_ids=[gpu], broadcast_buffers=False, find_unused_parameters=True).module
-        D = torch.nn.parallel.DistributedDataParallel(D, device_ids=[gpu]).module
+        Sketch_E = torch.nn.parallel.DistributedDataParallel(Sketch_E, device_ids=[gpu], broadcast_buffers=False, find_unused_parameters=True).module
+        Sketch_D = torch.nn.parallel.DistributedDataParallel(Sketch_D, device_ids=[gpu]).module
 
         # make sampler 
         train_sampler = torch.utils.data.distributed.DistributedSampler(train_set)
@@ -59,7 +59,7 @@ def train(gpu, args):
     #testing_batch_iterator = iter(testing_data_loader)
     
     # build loss
-    loss_collector = lossCollector(args)
+    loss_collector = lossCollector(args,None)
 
     # initialize wandb
     if args.isMaster:
@@ -80,8 +80,8 @@ def train(gpu, args):
         ###########
         #  train  #
         ###########
-        sktech_feature = E(sketch_real)
-        sketch_recon,_ = D(sktech_feature)
+        sktech_feature = Sketch_E(sketch_real)
+        sketch_recon,_ = Sketch_D(sktech_feature)
 
         loss = loss_collector.get_L1_loss(sketch_real, sketch_recon)
 
@@ -113,7 +113,7 @@ def train(gpu, args):
 
         # save ckpt
         if global_step % args.ckpt_cycle == 0:
-            ckptio.geometry_save_skpt(global_step, E, D, opt)
+            ckptio.geometry_save_ckpt(global_step, Sketch_E, Sketch_D, opt)
 
 if __name__ == "__main__":
     

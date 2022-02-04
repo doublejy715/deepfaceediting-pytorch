@@ -4,9 +4,9 @@ import torch.nn as nn
 from nets.block import ResnetBlock, ConvBlock
 
 # extract feature map from sketch
-class Sketch_Decoder_Part(nn.Module):
+class Sketch_Decoder(nn.Module):
     def __init__(self, input_nc, output_nc, pad_type='reflect', norm="in", activation='relu'):
-        super(Sketch_Decoder_Part, self).__init__() 
+        super(Sketch_Decoder, self).__init__() 
         # resnet block
         self.ResBlock = ResnetBlock(input_nc, norm_type=norm, pad_type=pad_type)
         
