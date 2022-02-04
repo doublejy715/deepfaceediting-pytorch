@@ -125,7 +125,7 @@ def train(gpu, args):
         d_recon_img = D(recon_img.detach())
         
         # D loss
-        loss_D = loss_collector.get_loss_D(d_geo_real, d_recon_img)
+        loss_D = loss_collector.get_loss_D(d_geo_real, None, d_recon_img, None, None)
         # loss_D = loss_collector.get_loss_D_BCE(d_geo_real, d_recon_geo_img, d_app_real, d_recon_app_img)
         utils.update_net(opt_D, loss_D)
 
