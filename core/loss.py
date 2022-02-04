@@ -8,7 +8,7 @@ import torchvision
 from torch.nn.functional import grid_sample
 
 class lossCollector():
-    def __init__(self, args, FM_D):
+    def __init__(self, args):
         super(lossCollector, self).__init__()
         self.args = args
         self.start_time = time.time()
@@ -17,7 +17,6 @@ class lossCollector():
         self.L2 = torch.nn.MSELoss()
         self.loss_VGG = VGGPerceptualLoss().cuda(args.gpu_id)
         self.loss_LAB = LabColorLoss()
-        self.FM_D = FM_D
 
     def get_id_loss(self, a, b):
         return (1 - torch.cosine_similarity(a, b, dim=1)).mean()
@@ -66,6 +65,12 @@ class lossCollector():
     def get_geo_loss(self,a,b):
         return self.get_L1_loss(a,b)
 
+    def multi_d_loss(self, d):
+        loss = 0
+        for i in range(3):
+            loss += torch.log10(d[i][0]).mean()
+        return loss
+
     def get_recon_loss(self,a,b):
         L_recon = 0.0
         if self.args.W_recon_Lab:
@@ -110,6 +115,12 @@ class lossCollector():
         self.loss_dict["L_swap_cycle_VGG"] = round(L_swap_cycle_VGG.item(), 4)
         return L_swap_cycle
 
+    def get_hinge_loss(self, Di, label):
+        L_adv = 0
+        for di in Di:
+            L_adv += utils.hinge_loss(di[0], label)
+        return L_adv
+        
     def get_swap_loss(self,a,b):
         L_swap = 0.0
         if self.args.W_swap_geo:
@@ -129,36 +140,36 @@ class lossCollector():
     def get_adv_loss(self, d_geo_real, d_app_real, d_recon_geo_img, d_recon_app_img, d_mix_img):
         L_adv = 0.0
         if self.args.W_adv_geo:
-            L_adv_geo = self.args.W_adv_geo * torch.mean(torch.log10(d_geo_real[0][0]))
+            L_adv_geo = self.args.W_adv_geo * self.multi_d_loss(d_geo_real)
             L_adv += L_adv_geo
 
         if self.args.W_adv_app:
-            L_adv_app = self.args.W_adv_app * torch.mean(torch.log10(d_app_real[0][0]))
+            L_adv_app = self.args.W_adv_app * self.multi_d_loss(d_app_real)
             L_adv += L_adv_app
 
         if self.args.W_adv_recon_geo:
-            L_adv_recon_geo = self.args.W_adv_recon_geo * torch.mean((1-torch.log10(d_recon_geo_img[0][0])))
+            L_adv_recon_geo = self.args.W_adv_recon_geo * (1-self.multi_d_loss(d_recon_geo_img))
             L_adv += L_adv_recon_geo
 
         if self.args.W_adv_recon_app:
-            L_adv_recon_app = self.args.W_adv_recon_app * torch.mean((1-torch.log10(d_recon_app_img[0][0])))
+            L_adv_recon_app = self.args.W_adv_recon_app * (1-self.multi_d_loss(d_recon_app_img))
             L_adv += L_adv_recon_app
         
         if self.args.W_adv_mix:
-            L_adv_mix = self.args.W_adv_mix * torch.mean((1-torch.log10(d_mix_img[0][0])))
+            L_adv_mix = self.args.W_adv_mix * (1-self.multi_d_loss(d_mix_img))
             L_adv += L_adv_mix
 
         # save in dict
-        self.loss_dict["L_adv"] = round(L_adv.item(), 4)
-        self.loss_dict["L_adv_geo"] = round(L_adv_geo.item(), 4)
-        self.loss_dict["L_adv_app"] = round(L_adv_app.item(), 4)
-        self.loss_dict["L_adv_recon_geo"] = round(L_adv_recon_geo.item(), 4)
-        self.loss_dict["L_adv_recon_app"] = round(L_adv_recon_app.item(), 4)
-        self.loss_dict["L_adv_mix"] = round(L_adv_mix.item(), 4)
+        # self.loss_dict["L_adv"] = round(L_adv.item(), 4)
+        # self.loss_dict["L_adv_geo"] = round(L_adv_geo.item(), 4)
+        # self.loss_dict["L_adv_app"] = round(L_adv_app.item(), 4)
+        # self.loss_dict["L_adv_recon_geo"] = round(L_adv_recon_geo.item(), 4)
+        # self.loss_dict["L_adv_recon_app"] = round(L_adv_recon_app.item(), 4)
+        # self.loss_dict["L_adv_mix"] = round(L_adv_mix.item(), 4)
 
         return L_adv
 
-    def get_loss_G(self, geo_real, app_real, recon_geo_img, recon_app_img, d_geo_real, d_app_real, d_recon_geo_img, d_recon_app_img, d_mix_img):
+    def get_loss_G(self, geo_real, app_real, recon_geo_img, recon_app_img, g_geo_real, g_app_real, g_recon_geo_img, g_recon_app_img, g_mix_img):
         L_G = 0.0
         if self.args.W_recon:
             L_recon = self.get_cycle_loss(geo_real, recon_geo_img)
@@ -168,11 +179,15 @@ class lossCollector():
             L_swap = self.get_swap_loss(app_real, recon_app_img)
             L_G += self.args.W_swap * L_swap
 
+        # if self.args.W_adv:
+        #     L_adv = self.get_adv_loss(g_geo_real, g_app_real, g_recon_geo_img, g_recon_app_img, g_mix_img)
+        #     L_G += self.args.W_adv * L_adv
+
         if self.args.W_adv:
-            L_adv = self.get_adv_loss(d_geo_real, d_app_real, d_recon_geo_img, d_recon_app_img, d_mix_img)
+            L_adv = self.get_hinge_loss(g_mix_img, True)
             L_G += self.args.W_adv * L_adv
 
-        # save in dict
+                # save in dict
         self.loss_dict["L_G"] = round(L_G.item(), 4)
         self.loss_dict["L_recon"] = round(L_recon.item(), 4)
         self.loss_dict["L_swap"] = round(L_swap.item(), 4)
@@ -183,33 +198,38 @@ class lossCollector():
     # I1,I1',I2,I2'
     def get_loss_D(self, d_geo_real, d_app_real, d_recon_geo_img, d_recon_app_img, d_mix_img):
         L_D = 0.0
-        if self.args.W_D_geo:
-            L_D_geo = self.args.W_D_geo * torch.mean(torch.log10(d_geo_real[0][0]))
-            L_D += L_D_geo
-
-        if self.args.W_D_app:
-            L_D_app = self.args.W_D_app * torch.mean(torch.log10(d_app_real[0][0]))
-            L_D += L_D_app
-
-        if self.args.W_D_recon_geo:
-            L_D_recon_geo = self.args.W_D_recon_geo * torch.mean((1-torch.log10(d_recon_geo_img[0][0])))
-            L_D += L_D_recon_geo
-
-        if self.args.W_D_recon_app:
-            L_D_recon_app = self.args.W_D_recon_app * torch.mean((1-torch.log10(d_recon_app_img[0][0])))
-            L_D += L_D_recon_app
+        L_real = self.get_hinge_loss(d_app_real, True)
+        L_fake = self.get_hinge_loss(d_mix_img, False)
         
-        if self.args.W_D_mix:
-            L_D_mix = self.args.W_D_mix * torch.mean((1-torch.log10(d_mix_img[0][0])))
-            L_D += L_D_mix
-        #print(round(L_D.item(), 4), round(L_D_geo.item(), 4), round(L_D_app.item(), 4), round(L_D_recon_geo.item(), 4), round(L_D_recon_app.item(), 4),round(L_D_mix.item(), 4))
+        L_D += self.args.W_adv * (L_real + L_fake) * 0.5
+
+        # if self.args.W_D_geo:
+        #     L_D_geo = self.args.W_D_geo * torch.mean(torch.log10(d_geo_real[0][0]))
+        #     L_D += L_D_geo
+
+        # if self.args.W_D_app:
+        #     L_D_app = self.args.W_D_app * torch.mean(torch.log10(d_app_real[0][0]))
+        #     L_D += L_D_app
+
+        # if self.args.W_D_recon_geo:
+        #     L_D_recon_geo = self.args.W_D_recon_geo * torch.mean((1-torch.log10(d_recon_geo_img[0][0])))
+        #     L_D += L_D_recon_geo
+
+        # if self.args.W_D_recon_app:
+        #     L_D_recon_app = self.args.W_D_recon_app * torch.mean((1-torch.log10(d_recon_app_img[0][0])))
+        #     L_D += L_D_recon_app
+        
+        # if self.args.W_D_mix:
+        #     L_D_mix = self.args.W_D_mix * torch.mean((1-torch.log10(d_mix_img[0][0])))
+        #     L_D += L_D_mix
+            
         # save in dict
         self.loss_dict["L_D"] = round(L_D.item(), 4)
-        self.loss_dict["L_D_geo"] = round(L_D_geo.item(), 4)
-        self.loss_dict["L_D_app"] = round(L_D_app.item(), 4)
-        self.loss_dict["L_D_recon_geo"] = round(L_D_recon_geo.item(), 4)
-        self.loss_dict["L_D_recon_app"] = round(L_D_recon_app.item(), 4)
-        self.loss_dict["L_D_mix"] = round(L_D_mix.item(), 4)
+        # self.loss_dict["L_D_geo"] = round(L_D_geo.item(), 4)
+        # self.loss_dict["L_D_app"] = round(L_D_app.item(), 4)
+        # self.loss_dict["L_D_recon_geo"] = round(L_D_recon_geo.item(), 4)
+        # self.loss_dict["L_D_recon_app"] = round(L_D_recon_app.item(), 4)
+        # self.loss_dict["L_D_mix"] = round(L_D_mix.item(), 4)
         
         return L_D
 
@@ -218,6 +238,7 @@ class lossCollector():
         print("")
         print(f"[ {seconds//3600//24:02}d {(seconds//3600)%24:02}h {(seconds//60)%60:02}m {seconds%60:02}s ]")
         print(f'steps: {global_step:06} / {self.args.max_step}')
+        # print(f'lossG: {self.loss_dict["L_G"]}')
         print(f'lossD: {self.loss_dict["L_D"]} | lossG: {self.loss_dict["L_G"]}')
     
     def print_L1_loss(self, global_step):

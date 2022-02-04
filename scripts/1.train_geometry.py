@@ -59,7 +59,7 @@ def train(gpu, args):
     #testing_batch_iterator = iter(testing_data_loader)
     
     # build loss
-    loss_collector = lossCollector(args,None)
+    loss_collector = lossCollector(args)
 
     # initialize wandb
     if args.isMaster:

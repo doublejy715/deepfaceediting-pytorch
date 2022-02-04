@@ -34,11 +34,12 @@ def weights_init(m):
         m.bias.data.fill_(0)
 
 def get_num_adain_params(model):
-        # return the number of AdaIN parameters needed by the model
+    # return the number of AdaIN parameters needed by the model
     num_adain_params = 0
     for m in model.modules():
         if m.__class__.__name__ == "AdaptiveInstanceNorm2d":
             num_adain_params += 2*m.num_features
+            
     return num_adain_params
 
 def assign_adain_params(model, adain_params):

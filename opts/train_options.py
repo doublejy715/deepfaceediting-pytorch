@@ -15,8 +15,8 @@ def train_options():
     
     # log
     parser.add_argument('--loss_cycle', type=str, default=10)
-    parser.add_argument('--test_cycle', type=str, default=100)
-    parser.add_argument('--ckpt_cycle', type=str, default=1000)
+    parser.add_argument('--test_cycle', type=str, default=1000)
+    parser.add_argument('--ckpt_cycle', type=str, default=10000)
     parser.add_argument('--save_root', type=str, default="training_result")
 
     # hyperparameters
@@ -64,9 +64,9 @@ def train_options():
 
     # learning rate
     parser.add_argument('--lr', type=str, default=4e-4)
-    parser.add_argument('--lr_G', type=str, default=4e-4*5)
-    parser.add_argument('--lr_D', type=str, default=4e-4*5)
-    parser.add_argument('--beta1', type=str, default=0.5)
+    parser.add_argument('--lr_G', type=str, default=4e-4)
+    parser.add_argument('--lr_D', type=str, default=4e-5)
+    parser.add_argument('--beta1', type=str, default=0)
 
     # multi GPU
     parser.add_argument('--isMaster', default=False)

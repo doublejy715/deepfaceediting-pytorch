@@ -11,13 +11,10 @@ from core.checkpoint import ckptIO
 from core.loss import lossCollector
 from core.dataset import Dataset
 from opts.train_options import train_options
-from nets.encoder import Image_Encoder, Style_Encoder, Sketch_Encoder
+from nets.encoder import Image_Encoder, Style_Encoder
 from nets.generator import Local_G
 from nets.discriminator import MultiscaleDiscriminator
 from utils.nets_utils import assign_adain_params
-
-
-
 
 def train(gpu, args): 
     # set gpu
@@ -25,10 +22,9 @@ def train(gpu, args):
 
     # build models
     LD_G = Local_G(256,3).cuda(gpu).train()
-    LD_D = MultiscaleDiscriminator(3,use_sigmoid=True).cuda(gpu).train()
+    LD_D = MultiscaleDiscriminator(3).cuda(gpu).train()
     Image_E = Image_Encoder(3,256).cuda(gpu).eval()
-    Style_E = Style_Encoder(3, LD_G).cuda(gpu).train()
-
+    Style_E = Style_Encoder(3, LD_G.style_dim).cuda(gpu).train()
         
     # build a dataset
     train_set = Dataset(f"{args.dataset}/train")
@@ -59,7 +55,7 @@ def train(gpu, args):
         #test_sampler = torch.utils.data.distributed.DistributedSampler(test_set)
 
     # build a dataloader
-    training_data_loader = DataLoader(dataset=train_set, batch_size=args.batch_size,sampler=train_sampler, num_workers=args.num_works,drop_last=True)
+    training_data_loader = DataLoader(dataset=train_set, batch_size=args.batch_size,sampler=train_sampler, pin_memory=True, num_workers=args.num_works,drop_last=True)
     #testing_data_loader = DataLoader(dataset=test_set, batch_size=args.test_batch_size,sampler=test_sampler, num_workers=args.num_works,drop_last=True)
     
     # load checkpoint
@@ -70,11 +66,11 @@ def train(gpu, args):
     #testing_batch_iterator = iter(testing_data_loader)
     
     # build loss
-    loss_collector = lossCollector(args, LD_D)
+    loss_collector = lossCollector(args)
 
     # initialize wandb
-    if args.isMaster:
-        wandb.init(project=args.project_id, name=args.run_id)
+    # if args.isMaster:
+    #     wandb.init(project=args.project_id, name=args.run_id)
 
     global_step = -1
     while global_step < args.max_step:
@@ -120,21 +116,21 @@ def train(gpu, args):
         recon_app_img = LD_G.rgb_forward(app_feature)
 
         # D
-        d_geo_real = LD_D(geo_real)
-        d_app_real = LD_D(app_real)
-        d_recon_geo_img = LD_D(recon_geo_img)
-        d_recon_app_img = LD_D(recon_app_img)
-        d_mix_img = LD_D(mix_img)
+        g_geo_real = LD_D(geo_real)
+        g_app_real = LD_D(app_real)
+        g_recon_geo_img = LD_D(recon_geo_img)
+        g_recon_app_img = LD_D(recon_app_img)
+        g_mix_img = LD_D(mix_img)
 
         # G loss
 
-        loss_G = loss_collector.get_loss_G(geo_real, app_real, recon_geo_img, recon_app_img, d_geo_real, d_app_real, d_recon_geo_img, d_recon_app_img, d_mix_img)
+        loss_G = loss_collector.get_loss_G(geo_real, app_real, recon_geo_img, recon_app_img, g_geo_real, g_app_real, g_recon_geo_img, g_recon_app_img, g_mix_img)
         utils.update_net(opt_G, loss_G)
 
         # run D : False gradient (use .detach())
         # 앞에서 같은 과정이 있어도 .detach()로 다시 해준다. loss_D에 들어가는 모든 것은 loss_G와 분리 시켜 줘야한다.
-        d_geo_real = LD_D(geo_real.detach())
-        d_app_real = LD_D(app_real.detach())
+        d_geo_real = LD_D(geo_real)
+        d_app_real = LD_D(app_real)
         d_recon_geo_img = LD_D(recon_geo_img.detach())
         d_recon_app_img = LD_D(recon_app_img.detach())
         d_mix_img = LD_D(mix_img.detach())
@@ -142,14 +138,13 @@ def train(gpu, args):
         
         # D loss
         loss_D = loss_collector.get_loss_D(d_geo_real, d_app_real, d_recon_geo_img, d_recon_app_img, d_mix_img)
-        # loss_D = loss_collector.get_loss_D_BCE(d_geo_real, d_recon_geo_img, d_app_real, d_recon_app_img)
         utils.update_net(opt_D, loss_D)
 
         # # log and print loss
         if args.isMaster and global_step % args.loss_cycle==0:
             
-            # log loss on wandb
-            wandb.log(loss_collector.loss_dict)
+        #     # log loss on wandb
+        #     wandb.log(loss_collector.loss_dict)
             loss_collector.print_loss(global_step)
 
         # save image

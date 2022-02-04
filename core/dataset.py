@@ -43,7 +43,7 @@ class Img_Encoder_Dataset(Dataset):
 class Dataset(Dataset):
     def __init__(self,data_path):
         self.img_dataset = glob.glob(data_path+'/image/*.*')
-        self.geo_dataset = glob.glob(data_path+'/image/*.*')
+        # self.geo_dataset = glob.glob(data_path+'/image/*.*')
         self.transforms = transforms.Compose([
             transforms.Resize((256,256)),
             transforms.ToTensor(),
@@ -51,7 +51,7 @@ class Dataset(Dataset):
     # 랜덤
     def __getitem__(self, idx):
         img = Image.open(self.img_dataset[idx])
-        geo = Image.open(random.choice(self.geo_dataset))
+        geo = Image.open(random.choice(self.img_dataset))
         return self.transforms(img), self.transforms(geo)
 
     def __len__(self):

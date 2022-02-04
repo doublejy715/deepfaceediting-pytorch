@@ -120,7 +120,6 @@ def train(gpu, args):
         utils.update_net(opt_G, loss_G)
 
         # run D : False gradient (use .detach())
-        # 앞에서 같은 과정이 있어도 .detach()로 다시 해준다. loss_D에 들어가는 모든 것은 loss_G와 분리 시켜 줘야한다.
         d_geo_real = D(geo_real.detach())
         d_recon_img = D(recon_img.detach())
         
