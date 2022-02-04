@@ -25,7 +25,7 @@ def train(gpu, args):
 
     # build models
     LD_G = Local_G(256,3).cuda(gpu).train()
-    LD_D = MultiscaleDiscriminator(3).cuda(gpu).train()
+    LD_D = MultiscaleDiscriminator(3,use_sigmoid=True).cuda(gpu).train()
     Image_E = Image_Encoder(3,256).cuda(gpu).eval()
     Style_E = Style_Encoder(3, LD_G).cuda(gpu).train()
 

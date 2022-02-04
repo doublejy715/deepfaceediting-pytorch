@@ -202,7 +202,7 @@ class lossCollector():
         if self.args.W_D_mix:
             L_D_mix = self.args.W_D_mix * torch.mean((1-torch.log10(d_mix_img[0][0])))
             L_D += L_D_mix
-
+        #print(round(L_D.item(), 4), round(L_D_geo.item(), 4), round(L_D_app.item(), 4), round(L_D_recon_geo.item(), 4), round(L_D_recon_app.item(), 4),round(L_D_mix.item(), 4))
         # save in dict
         self.loss_dict["L_D"] = round(L_D.item(), 4)
         self.loss_dict["L_D_geo"] = round(L_D_geo.item(), 4)
