@@ -92,28 +92,17 @@ def train(gpu, args):
         # run G : True gradient
         # generate mixed img
         geo_feature = Image_E(geo_real)
-
-        app_adain_params = Style_E(app_real)
-
-        assign_adain_params(LD_G, app_adain_params)
-
-        mix_img = LD_G.rgb_forward(geo_feature)
+        app_style_vector = Style_E(app_real)
+        mix_img = LD_G.rgb_forward(geo_feature, app_style_vector)
 
         # recon geometry image
-        geo_adain_params = Style_E(geo_real)
-
-        assign_adain_params(LD_G, geo_adain_params)
-
-        recon_geo_img = LD_G.rgb_forward(geo_feature)
+        geo_style_vector = Style_E(geo_real)
+        recon_geo_img = LD_G.rgb_forward(geo_feature, geo_style_vector)
 
         # recon appear image
         app_feature = Image_E(app_real)
-
-        mix_adain_params = Style_E(mix_img)
-
-        assign_adain_params(LD_G, mix_adain_params)
-
-        recon_app_img = LD_G.rgb_forward(app_feature)
+        mix_style_vector = Style_E(mix_img)
+        recon_app_img = LD_G.rgb_forward(app_feature, mix_style_vector)
 
         # D
         g_geo_real = LD_D(geo_real)
