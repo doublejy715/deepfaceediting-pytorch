@@ -1,0 +1,2 @@
+# train geometry
+python scripts/train_geometry.py --run_id sketch_encoder_batch_16
