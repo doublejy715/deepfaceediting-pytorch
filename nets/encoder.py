@@ -25,7 +25,7 @@ class Sketch_Encoder(nn.Module):
         x = self.DownBlock2(x)
         x = self.DownBlock3(x)
         x = self.DownBlock4(x)
-        x = self.ResBlock(x)
+        x = self.ResBlock(x) # testing
         return x
 
 # extract feature map from Image
