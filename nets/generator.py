@@ -1,16 +1,15 @@
 import torch
 import torch.nn as nn
 
-from nets.block import ResnetBlock, ConvBlock
-from utils.nets_utils import get_num_adain_params
+from nets.block import ResnetBlock, ConvBlock, ResnetBlock_Adain
 
 class Local_G(nn.Module):
     def __init__(self, input_nc, output_nc, pad_type='reflect', norm='adain', activation='relu'):
         super(Local_G, self).__init__()
-        self.ResBlock1 = ResnetBlock(input_nc, norm_type=norm, pad_type=pad_type)
-        self.ResBlock2 = ResnetBlock(input_nc, norm_type=norm, pad_type=pad_type)
-        self.ResBlock3 = ResnetBlock(input_nc, norm_type=norm, pad_type=pad_type)
-        self.ResBlock4 = ResnetBlock(input_nc, norm_type=norm, pad_type=pad_type)
+        self.ResBlock1 = ResnetBlock_Adain(input_nc)
+        self.ResBlock2 = ResnetBlock_Adain(input_nc)
+        self.ResBlock3 = ResnetBlock_Adain(input_nc)
+        self.ResBlock4 = ResnetBlock_Adain(input_nc)
 
         self.ConvBlock1 = ConvBlock(input_nc, 256, 3, stride=2, conv_padding=1, transpose=True, norm=norm, activation=activation)
         self.ConvBlock2 = ConvBlock(256, 256, 3, stride=2, conv_padding=1, transpose=True, norm=norm, activation=activation)
@@ -19,8 +18,6 @@ class Local_G(nn.Module):
         
         # feature map to rgb image convert layer
         self.ConvBlock5 = ConvBlock(64, output_nc, 7, stride=1, pad_type=pad_type, conv_padding=3, norm='none', activation='tanh')
-        self.style_dim = get_num_adain_params(self)
-
 
     def forward(self, input):
         x = self.ResBlock1(input)
@@ -35,11 +32,12 @@ class Local_G(nn.Module):
 
         return x
 
-    def rgb_forward(self,input):
-        x = self.ResBlock1(input)
-        x = self.ResBlock2(x)
-        x = self.ResBlock3(x)
-        x = self.ResBlock4(x)
+    def rgb_forward(self,input, style_vector):
+
+        x = self.ResBlock1(input, style_vector)
+        x = self.ResBlock2(x, style_vector)
+        x = self.ResBlock3(x, style_vector)
+        x = self.ResBlock4(x, style_vector)
 
         x = self.ConvBlock1(x)
         x = self.ConvBlock2(x)
