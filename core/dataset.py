@@ -4,7 +4,6 @@ from PIL import Image
 import glob
 import random
 
-import numpy as np
 # step 1
 class Sketch_Encoder_Dataset(Dataset):
     def __init__(self, data_path):
@@ -21,6 +20,7 @@ class Sketch_Encoder_Dataset(Dataset):
 
     def __len__(self):
         return len(self.dataset)
+
 # step 2
 class Img_Encoder_Dataset(Dataset):
     def __init__(self,data_path):

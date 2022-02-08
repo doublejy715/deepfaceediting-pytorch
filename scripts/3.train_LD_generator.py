@@ -28,11 +28,11 @@ def train(gpu, args):
         
     # build a dataset
     train_set = Dataset(f"{args.dataset}/train")
-    #test_set = Img_Encoder_Dataset(f"{args.dataset}/test")
+    #test_set = Dataset(f"{args.dataset}/test")
 
     # load and initialize the optimizer
     # opt_G에 들어갈 것 : G 학습 과정 중 포함되는 모든 네트워크
-    opt_G = optim.Adam([*LD_G.parameters(),*Style_E.parameters()], lr=args.lr_G, betas=(args.beta1, 0.999))
+    opt_G = optim.Adam([*LD_G.parameters(), *Style_E.parameters()], lr=args.lr_G, betas=(args.beta1, 0.999))
     opt_D = optim.Adam(LD_D.parameters(), lr=args.lr_D, betas=(args.beta1, 0.999))
 
     train_sampler = None
@@ -55,15 +55,15 @@ def train(gpu, args):
         #test_sampler = torch.utils.data.distributed.DistributedSampler(test_set)
 
     # build a dataloader
-    training_data_loader = DataLoader(dataset=train_set, batch_size=args.batch_size,sampler=train_sampler, pin_memory=True, num_workers=args.num_works,drop_last=True)
-    #testing_data_loader = DataLoader(dataset=test_set, batch_size=args.test_batch_size,sampler=test_sampler, num_workers=args.num_works,drop_last=True)
+    train_data_loader = DataLoader(dataset=train_set, batch_size=args.batch_size,sampler=train_sampler, pin_memory=True, num_workers=args.num_works,drop_last=True)
+    #test_data_loader = DataLoader(dataset=test_set, batch_size=args.test_batch_size,sampler=test_sampler, num_workers=args.num_works,drop_last=True)
     
     # load checkpoint
     ckptio = ckptIO(args)
-    ckptio.LD_module_load_ckpt(args.first_train, Image_E, Style_E, LD_G, LD_D, opt_G, opt_D)
+    ckptio.load_ckpt(image_E = Image_E, style_E = Style_E, LD_G = LD_G, LD_D = LD_D, LD_opt_G = opt_G, LD_opt_D = opt_D)
 
-    training_batch_iterator = iter(training_data_loader)
-    #testing_batch_iterator = iter(testing_data_loader)
+    train_batch_iterator = iter(train_data_loader)
+    #test_batch_iterator = iter(test_data_loader)
     
     # build loss
     loss_collector = lossCollector(args)
@@ -76,13 +76,13 @@ def train(gpu, args):
     while global_step < args.max_step:
         global_step += 1
         try:
-            app_real, geo_real = next(training_batch_iterator)
+            I_s, I_t = next(train_batch_iterator)
         except StopIteration:
-            training_batch_iterator = iter(training_data_loader)
-            app_real, geo_real = next(training_batch_iterator)
+            train_batch_iterator = iter(train_data_loader)
+            I_s, I_t = next(train_batch_iterator)
         
         # transfer data to the gpus
-        app_real, geo_real = app_real.to(gpu), geo_real.to(gpu)
+        I_s, I_t = I_s.to(gpu), I_t.to(gpu)
         
         ###########
         #  train  #
@@ -91,58 +91,55 @@ def train(gpu, args):
 
         # run G : True gradient
         # generate mixed img
-        geo_feature = Image_E(geo_real)
+        I_t_feature = Image_E(I_t)
 
-        app_adain_params = Style_E(app_real)
+        I_s_adain_params = Style_E(I_s)
 
-        assign_adain_params(LD_G, app_adain_params)
+        assign_adain_params(LD_G, I_s_adain_params)
 
-        mix_img = LD_G.rgb_forward(geo_feature)
+        I_r = LD_G.rgb_forward(I_t_feature)
 
         # recon geometry image
-        geo_adain_params = Style_E(geo_real)
+        I_t_adain_params = Style_E(I_t)
 
-        assign_adain_params(LD_G, geo_adain_params)
+        assign_adain_params(LD_G, I_t_adain_params)
 
-        recon_geo_img = LD_G.rgb_forward(geo_feature)
+        I_t_recon = LD_G.rgb_forward(I_t_feature)
 
         # recon appear image
-        app_feature = Image_E(app_real)
+        I_s_feature = Image_E(I_s)
 
-        mix_adain_params = Style_E(mix_img)
+        I_r_adain_params = Style_E(I_r)
 
-        assign_adain_params(LD_G, mix_adain_params)
+        assign_adain_params(LD_G, I_r_adain_params)
 
-        recon_app_img = LD_G.rgb_forward(app_feature)
+        I_s_recon = LD_G.rgb_forward(I_s_feature)
 
         # D
-        g_geo_real = LD_D(geo_real)
-        g_app_real = LD_D(app_real)
-        g_recon_geo_img = LD_D(recon_geo_img)
-        g_recon_app_img = LD_D(recon_app_img)
-        g_mix_img = LD_D(mix_img)
+        g_I_t = LD_D(I_t)
+        g_I_s = LD_D(I_s)
+        g_I_t_recon = LD_D(I_t_recon)
+        g_I_s_recon = LD_D(I_s_recon)
+        g_I_r = LD_D(I_r)
 
         # G loss
-
-        loss_G = loss_collector.get_loss_G(geo_real, app_real, recon_geo_img, recon_app_img, g_geo_real, g_app_real, g_recon_geo_img, g_recon_app_img, g_mix_img)
+        loss_G = loss_collector.get_loss_G(I_t, I_s, I_t_recon, I_s_recon, g_I_t, g_I_s, g_I_t_recon, g_I_s_recon, g_I_r)
         utils.update_net(opt_G, loss_G)
 
         # run D : False gradient (use .detach())
         # 앞에서 같은 과정이 있어도 .detach()로 다시 해준다. loss_D에 들어가는 모든 것은 loss_G와 분리 시켜 줘야한다.
-        d_geo_real = LD_D(geo_real)
-        d_app_real = LD_D(app_real)
-        d_recon_geo_img = LD_D(recon_geo_img.detach())
-        d_recon_app_img = LD_D(recon_app_img.detach())
-        d_mix_img = LD_D(mix_img.detach())
-        
+        d_I_t = LD_D(I_t)
+        d_I_s = LD_D(I_s)
+        d_I_t_recon = LD_D(I_t_recon.detach())
+        d_I_s_recon = LD_D(I_s_recon.detach())
+        d_I_r = LD_D(I_r.detach())
         
         # D loss
-        loss_D = loss_collector.get_loss_D(d_geo_real, d_app_real, d_recon_geo_img, d_recon_app_img, d_mix_img)
+        loss_D = loss_collector.get_loss_D(d_I_t, d_I_s, d_I_t_recon, d_I_s_recon, d_I_r)
         utils.update_net(opt_D, loss_D)
 
         # # log and print loss
         if args.isMaster and global_step % args.loss_cycle==0:
-            
         #     # log loss on wandb
         #     wandb.log(loss_collector.loss_dict)
             loss_collector.print_loss(global_step)
@@ -150,23 +147,17 @@ def train(gpu, args):
         # save image
         if args.isMaster and global_step % args.test_cycle == 0:
             # try:
-            #     test_sketch_real = next(testing_batch_iterator)
+            #     test_I_s, test_I_t = next(test_batch_iterator)
             # except StopIteration:
-            #     testing_batch_iterator = iter(testing_data_loader)
-            #     test_sketch_real = next(testing_batch_iterator)
+            #     test_batch_iterator = iter(test_data_loader)
+            #     test_I_s, test_I_t = next(test_batch_iterator)
 
-            # test_sketch_real = test_sketch_real.to(gpu)
-            # test_feature_map = E(test_sketch_real)
-            # test_sketch_recon = D(test_feature_map)
-
-            # loss_collector.get_L1_loss(test_sketch_real, test_sketch_recon,test=True)
-
-            # utils.save_img(args, global_step, "imgs", [test_sketch_real, test_sketch_recon])
-            utils.save_img(args, global_step, "imgs", [app_real, geo_real, recon_app_img, mix_img])
+            
+            utils.save_img(args, global_step, "imgs", [I_s, I_t, I_s_recon, I_r])
 
         # save ckpt
         if global_step % args.ckpt_cycle == 0:
-            ckptio.LD_module_save_ckpt(global_step, Image_E, Style_E, LD_G, LD_D, opt_G, opt_D)
+            ckptio.save_ckpt(global_step, image_E = Image_E, style_E = Style_E, LD_G = LD_G, LD_D = LD_D, LD_opt_G = opt_G, LD_opt_D = opt_D)
 
 if __name__ == "__main__":
     
