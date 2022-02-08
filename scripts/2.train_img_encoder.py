@@ -31,7 +31,7 @@ def train(gpu, args):
 
     # load checkpoint
     ckptio = ckptIO(args)
-    ckptio.img_encoder_load_ckpt(args.first_train, Sketch_E, Image_E, Sketch_D, Image_D, opt)
+    ckptio.load_ckpt(sketch_E = Sketch_E, image_E = Image_E, sketch_D = Sketch_D, image_D = Image_D, image_opt = opt)
     
     # build a dataset
     train_set = Img_Encoder_Dataset(f"{args.dataset}/train")
@@ -57,78 +57,78 @@ def train(gpu, args):
         #test_sampler = torch.utils.data.distributed.DistributedSampler(test_set)
 
     # build a dataloader
-    training_data_loader = DataLoader(dataset=train_set, batch_size=args.batch_size,sampler=train_sampler, num_workers=args.num_works,drop_last=True)
-    #testing_data_loader = DataLoader(dataset=test_set, batch_size=args.test_batch_size,sampler=test_sampler, num_workers=args.num_works,drop_last=True)
+    train_data_loader = DataLoader(dataset=train_set, batch_size=args.batch_size,sampler=train_sampler, num_workers=args.num_works,drop_last=True)
+    #test_data_loader = DataLoader(dataset=test_set, batch_size=args.test_batch_size,sampler=test_sampler, num_workers=args.num_works,drop_last=True)
 
-    training_batch_iterator = iter(training_data_loader)
-    #testing_batch_iterator = iter(testing_data_loader)
+    train_batch_iterator = iter(train_data_loader)
+    #test_batch_iterator = iter(test_data_loader)
     
     # build loss
     loss_collector = lossCollector(args)
 
     # initialize wandb
-    # if args.isMaster:
-    #     wandb.init(project=args.project_id, name=args.run_id)
+    if args.isMaster:
+        wandb.init(project=args.project_id, name=args.run_id)
 
     global_step = -1
     while global_step < args.max_step:
         global_step += 1
         try:
-            image_real, sketch_real = next(training_batch_iterator)
+            I_s, I_t = next(train_batch_iterator)
         except StopIteration:
-            training_batch_iterator = iter(training_data_loader)
-            image_real, sketch_real = next(training_batch_iterator)
+            train_batch_iterator = iter(train_data_loader)
+            I_s, I_t = next(train_batch_iterator)
         
         # transfer data to the gpus
-        image_real, sketch_real = image_real.to(gpu), sketch_real.to(gpu)
+        I_s, I_t = I_s.to(gpu), I_t.to(gpu)
 
         ###########
         #  train  #
         ###########
-        sktech_feature = Sketch_E(sketch_real)
-        sketch_recon, sketch_ftmap_layers = Sketch_D(sktech_feature)
+        I_t_feature = Sketch_E(I_t)
+        I_t_recon, I_t_ftlayers = Sketch_D(I_t_feature)
 
-        image_feature = Image_E(image_real)
-        image_recon, image_ftmap_layers = Image_D(image_feature)
+        I_s_feature = Image_E(I_s)
+        I_s_recon, I_s_ftlayers = Image_D(I_s_feature)
 
-        loss = loss_collector.get_img_encoder_loss(sketch_ftmap_layers, image_ftmap_layers)
+        loss = loss_collector.get_img_encoder_loss(I_t_ftlayers, I_s_ftlayers)
 
         utils.update_net(opt, loss)
 
         # log and print loss
-        # if args.isMaster and global_step % args.loss_cycle==0:
+        if args.isMaster and global_step % args.loss_cycle==0:
             
-        #     # log loss on wandb
-        #     wandb.log(loss_collector.loss_dict)
-        #     loss_collector.print_L1_loss(global_step)
+            # log loss on wandb
+            wandb.log(loss_collector.loss_dict)
+            loss_collector.print_L1_loss(global_step)
 
         # save image
         if args.isMaster and global_step % args.test_cycle == 0:
             # try:
-            #     test_sketch_real = next(testing_batch_iterator)
+            #     test_I_t = next(test_batch_iterator)
             # except StopIteration:
-            #     testing_batch_iterator = iter(testing_data_loader)
-            #     test_sketch_real = next(testing_batch_iterator)
+            #     test_batch_iterator = iter(test_data_loader)
+            #     test_I_t = next(test_batch_iterator)
 
-            # test_sketch_real = test_sketch_real.to(gpu)
-            # test_feature_map = E(test_sketch_real)
-            # test_sketch_recon = D(test_feature_map)
+            # test_I_t = test_I_t.to(gpu)
+            # test_feature_map = E(test_I_t)
+            # test_I_t_recon = D(test_feature_map)
 
-            # loss_collector.get_L1_loss(test_sketch_real, test_sketch_recon,test=True)
+            # loss_collector.get_L1_loss(test_I_t, test_I_t_recon,test=True)
 
-            # utils.save_img(args, global_step, "imgs", [test_sketch_real, test_sketch_recon])
-            utils.save_img(args, global_step, "imgs", [sketch_recon, image_recon])
+            # utils.save_img(args, global_step, "imgs", [test_I_t, test_I_t_recon])
+            utils.save_img(args, global_step, "imgs", [I_s, I_t_recon, I_s_recon])
 
         # save ckpt
         if global_step % args.ckpt_cycle == 0:
-            ckptio.img_encoder_save_ckpt(global_step, Sketch_E, Image_E, Sketch_D, opt)
+            ckptio.save_ckpt(global_step, sketch_E = Sketch_E, image_E = Image_E, sketch_D = Sketch_D, image_opt = opt)
 
 if __name__ == "__main__":
     
     # get args
     args = train_options()
 
-    # make training dir
+    # make train dir
     os.makedirs(args.save_root, exist_ok=True)
 
     # setup multi-GPUs env
@@ -140,10 +140,10 @@ if __name__ == "__main__":
         # divide by gpu num
         args.batch_size = int(args.batch_size / args.gpu_num)
 
-        # start multi-GPUs training
+        # start multi-GPUs train
         torch.multiprocessing.spawn(train, nprocs=args.gpu_num, args=(args, ))
 
-    # if use single-GPU
+    # if use sle-GPU
     else:
         # set isMaster
         args.isMaster = True

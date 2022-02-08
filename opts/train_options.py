@@ -8,15 +8,15 @@ def train_options():
     parser.add_argument('--gpu_id', type=int, default=0) 
     parser.add_argument('--project_id', type=str, default="deepfaceediting")
     parser.add_argument('--run_id', type=str, required=True) 
-    parser.add_argument('--ckpt_id', type=str, default='testing_step_2_2')
+    parser.add_argument('--ckpt_id', type=str, default='')
 
     # dataset
     parser.add_argument("--dataset", type=str, default = "datasets", help = "the path of geometry image")
     
     # log
     parser.add_argument('--loss_cycle', type=str, default=10)
-    parser.add_argument('--test_cycle', type=str, default=1000)
-    parser.add_argument('--ckpt_cycle', type=str, default=10000)
+    parser.add_argument('--test_cycle', type=str, default=100)
+    parser.add_argument('--ckpt_cycle', type=str, default=1000)
     parser.add_argument('--save_root', type=str, default="training_result")
 
     # hyperparameters
@@ -77,6 +77,5 @@ def train_options():
 
     # etc
     parser.add_argument('--num_works', type=int, default=16, help='number of threads for data loader to use')
-    parser.add_argument('--first_train', action='store_true')
 
     return parser.parse_args()
