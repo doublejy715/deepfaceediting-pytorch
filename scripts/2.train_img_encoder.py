@@ -72,9 +72,9 @@ def train(gpu, args):
 
     global_step = -1
     while global_step < args.max_step:
-        global_step += 1
+        global_step += 1 # testing
         try:
-            I_s, I_t = next(train_batch_iterator)
+            I_s, I_t = next(train_batch_iterator) 
         except StopIteration:
             train_batch_iterator = iter(train_data_loader)
             I_s, I_t = next(train_batch_iterator)
