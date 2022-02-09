@@ -2,7 +2,6 @@ import torch
 import torch.nn as nn
 
 from nets.block import ResnetBlock, ConvBlock,ResnetBlock_Adain
-from utils.nets_utils import get_num_adain_params
 
 class Local_G(nn.Module):
     def __init__(self, input_nc, output_nc, pad_type='reflect', norm='in', activation='relu'):
@@ -19,7 +18,6 @@ class Local_G(nn.Module):
         
         # feature map to rgb image convert layer
         self.ConvBlock5 = ConvBlock(64, output_nc, 7, stride=1, pad_type=pad_type, conv_padding=3, norm='none', activation='tanh')
-        self.style_dim = get_num_adain_params(self)
 
 
     def forward(self, input, I_s_adain_params):

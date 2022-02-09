@@ -63,7 +63,7 @@ class Image_Encoder(nn.Module):
         return x
 
 class Style_Encoder(nn.Module):
-    def __init__(self, input_cn, style_dim, pad_type='reflect', norm='none', activation='relu'):
+    def __init__(self, input_cn, pad_type='reflect', norm='none', activation='relu'):
         super(Style_Encoder, self).__init__()
 
         self.ConvBlock1 = ConvBlock(input_cn, 64, 7, stride=1, pad_type=pad_type, conv_padding=3, norm=norm, activation=activation)

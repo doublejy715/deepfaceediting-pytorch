@@ -14,7 +14,6 @@ from opts.train_options import train_options
 from nets.encoder import Image_Encoder, Style_Encoder
 from nets.generator import Local_G, Global_G
 from nets.discriminator import MultiscaleDiscriminator
-from utils.nets_utils import assign_adain_params
 
 
 
@@ -29,7 +28,7 @@ def train(gpu, args):
 
     LD_G = Local_G(256,3).cuda(gpu).eval()
     Image_E = Image_Encoder(3,256).cuda(gpu).eval()
-    Style_E = Style_Encoder(3, LD_G).cuda(gpu).eval()
+    Style_E = Style_Encoder(3).cuda(gpu).eval()
 
         
     # build a dataset
@@ -104,7 +103,6 @@ def train(gpu, args):
 
         app_adain_params = Style_E(geo_real)
 
-        assign_adain_params(LD_G, app_adain_params)
 
         mix_feature_map = LD_G.forward(geo_feature)
 

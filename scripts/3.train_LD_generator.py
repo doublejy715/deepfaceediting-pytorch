@@ -15,7 +15,6 @@ from nets.encoder import Image_Encoder, Style_Encoder
 from nets.generator import Local_G
 from nets.decoder import Sketch_Decoder
 from nets.discriminator import MultiscaleDiscriminator
-from utils.nets_utils import assign_adain_params
 
 def train(gpu, args): 
     # set gpu
@@ -26,7 +25,7 @@ def train(gpu, args):
     LD_G = Local_G(256,3).cuda(gpu).train()
     LD_D = MultiscaleDiscriminator(3).cuda(gpu).train()
     Image_E = Image_Encoder(3,256).cuda(gpu).eval()
-    Style_E = Style_Encoder(3, LD_G.style_dim).cuda(gpu).train()
+    Style_E = Style_Encoder(3).cuda(gpu).train()
     Sketch_D = Sketch_Decoder(256,1).cuda(gpu).eval()
     
 

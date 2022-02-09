@@ -32,23 +32,3 @@ def weights_init(m):
     elif classname.find('BatchNorm2d') != -1:
         m.weight.data.normal_(1.0, 0.02)
         m.bias.data.fill_(0)
-
-def get_num_adain_params(model):
-    # return the number of AdaIN parameters needed by the model
-    num_adain_params = 0
-    for m in model.modules():
-        if m.__class__.__name__ == "AdaptiveInstanceNorm2d":
-            num_adain_params += 2*m.num_features
-            
-    return num_adain_params
-
-def assign_adain_params(model, adain_params):
-    # assign the adain_params to the AdaIN layers in model
-    for m in model.modules():
-        if m.__class__.__name__ == "AdaptiveInstanceNorm2d":
-            mean = adain_params[:, :m.num_features]
-            std = adain_params[:, m.num_features:2*m.num_features]
-            m.bias = mean
-            m.weight = std
-            if adain_params.size(1) > 2*m.num_features:
-                adain_params = adain_params[:, 2*m.num_features:]
