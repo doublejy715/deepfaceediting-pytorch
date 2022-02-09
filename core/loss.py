@@ -88,7 +88,7 @@ class lossCollector():
         # save in dict
         self.loss_dict["L_recon"] = round(L_recon.item(), 4)
         self.loss_dict["L_recon_lab"] = round(L_recon_lab.item(), 4)
-        self.loss_dict["L_recon_fm"] = round(L_recon_fm.item(), 4)
+        # self.loss_dict["L_recon_fm"] = round(L_recon_fm.item(), 4)
         self.loss_dict["L_recon_VGG"] = round(L_recon_VGG.item(), 4)
 
         return L_recon
@@ -111,7 +111,7 @@ class lossCollector():
         # save in dict
         self.loss_dict["L_swap_cycle"] = round(L_swap_cycle.item(), 4)
         self.loss_dict["L_swap_cycle_lab"] = round(L_swap_cycle_lab.item(), 4)
-        self.loss_dict["L_swap_cycle_fm"] = round(L_swap_cycle_fm.item(), 4)
+        # self.loss_dict["L_swap_cycle_fm"] = round(L_swap_cycle_fm.item(), 4)
         self.loss_dict["L_swap_cycle_VGG"] = round(L_swap_cycle_VGG.item(), 4)
         return L_swap_cycle
 
@@ -401,8 +401,8 @@ class VGGPerceptualLoss(torch.nn.Module):
         if input.shape[1] != 3:
             input = input.repeat(1, 3, 1, 1)
             target = target.repeat(1, 3, 1, 1)
-        input = (input-self.mean) / self.std
-        target = (target-self.mean) / self.std
+        # input = (input-self.mean) / self.std
+        # target = (target-self.mean) / self.std
         if self.resize:
             input = self.transform(input, mode='bilinear', size=(224, 224), align_corners=False)
             target = self.transform(target, mode='bilinear', size=(224, 224), align_corners=False)

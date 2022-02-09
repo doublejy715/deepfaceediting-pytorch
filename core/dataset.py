@@ -11,6 +11,7 @@ class Sketch_Encoder_Dataset(Dataset):
         self.transforms = transforms.Compose([
             transforms.Resize((256,256)),
             transforms.ToTensor(),
+            transforms.Normalize((0.5,0.5,0.5),(0.5,0.5,0.5))
         ])
 
     def __getitem__(self, idx):
@@ -29,6 +30,7 @@ class Img_Encoder_Dataset(Dataset):
         self.transforms = transforms.Compose([
             transforms.Resize((256,256)),
             transforms.ToTensor(),
+            transforms.Normalize((0.5,0.5,0.5),(0.5,0.5,0.5))
         ])
         
     def __getitem__(self, idx):
@@ -47,6 +49,7 @@ class Dataset(Dataset):
         self.transforms = transforms.Compose([
             transforms.Resize((256,256)),
             transforms.ToTensor(),
+            transforms.Normalize((0.5,0.5,0.5),(0.5,0.5,0.5))
         ])
     # 랜덤
     def __getitem__(self, idx):

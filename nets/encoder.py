@@ -66,17 +66,13 @@ class Style_Encoder(nn.Module):
     def __init__(self, input_cn, style_dim, pad_type='reflect', norm='none', activation='relu'):
         super(Style_Encoder, self).__init__()
 
-        self.ConvBlock1 = ConvBlock(input_cn, 16, 7, stride=1, pad_type=pad_type, conv_padding=3, norm=norm, activation=activation)
-        
-        self.ConvBlock2 = ConvBlock(16, 32, 4, stride=2, pad_type=pad_type, conv_padding=1, norm=norm, activation=activation)
-        self.ConvBlock3 = ConvBlock(32, 64, 4, stride=2, pad_type=pad_type, conv_padding=1, norm=norm, activation=activation)
-
-        self.ConvBlock4 = ConvBlock(64, 64, 4, stride=2, pad_type=pad_type, conv_padding=1, norm=norm, activation=activation)
-        self.ConvBlock5 = ConvBlock(64, 64, 4, stride=2, pad_type=pad_type, conv_padding=1, norm=norm, activation=activation)
-        self.ConvBlock6 = ConvBlock(64, 64, 4, stride=2, pad_type=pad_type, conv_padding=1, norm=norm, activation=activation)
+        self.ConvBlock1 = ConvBlock(input_cn, 64, 7, stride=1, pad_type=pad_type, conv_padding=3, norm=norm, activation=activation)
+        self.ConvBlock2 = ConvBlock(64, 128, 3, stride=2, pad_type=pad_type, conv_padding=1, norm=norm, activation=activation)
+        self.ConvBlock3 = ConvBlock(128, 256, 3, stride=2, pad_type=pad_type, conv_padding=1, norm=norm, activation=activation)
+        self.ConvBlock4 = ConvBlock(256, 256, 3, stride=2, pad_type=pad_type, conv_padding=1, norm=norm, activation=activation)
+        self.ConvBlock5 = ConvBlock(256, 256, 3, stride=2, pad_type=pad_type, conv_padding=1, norm=norm, activation=activation)
 
         self.Gap = nn.AdaptiveAvgPool2d(1)
-        self.Conv = nn.Conv2d(64, style_dim, 1, 1, 0)
 
     def forward(self, input):
         x = self.ConvBlock1(input)
@@ -84,11 +80,6 @@ class Style_Encoder(nn.Module):
         x = self.ConvBlock3(x)
         x = self.ConvBlock4(x)
         x = self.ConvBlock5(x)
-        x = self.ConvBlock6(x)
         x = self.Gap(x)
-        x = self.Conv(x)
 
         return x
-
-
-

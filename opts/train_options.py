@@ -16,11 +16,11 @@ def train_options():
     # log
     parser.add_argument('--loss_cycle', type=str, default=10)
     parser.add_argument('--test_cycle', type=str, default=100)
-    parser.add_argument('--ckpt_cycle', type=str, default=1000)
+    parser.add_argument('--ckpt_cycle', type=str, default=5000)
     parser.add_argument('--save_root', type=str, default="training_result")
 
     # hyperparameters
-    parser.add_argument('--batch_size', type=str, default=8)
+    parser.add_argument('--batch_size', type=str, default=2)
     parser.add_argument('--test_batch_size', type=str, default=2)
     parser.add_argument('--max_step', type=str, default=200000)
 
@@ -30,13 +30,13 @@ def train_options():
     # Recon
     parser.add_argument('--W_recon', type=int, default=1)
     parser.add_argument('--W_recon_Lab', type=int, default=1)
-    parser.add_argument('--W_recon_FM', type=int, default=10)
+    parser.add_argument('--W_recon_FM', type=int, default=0)
     parser.add_argument('--W_recon_VGG', type=int, default=10)
 
     # Cycle
     parser.add_argument('--W_cycle', type=int, default=1)
     parser.add_argument('--W_cycle_Lab', type=int, default=1)
-    parser.add_argument('--W_cycle_FM', type=int, default=10)
+    parser.add_argument('--W_cycle_FM', type=int, default=0)
     parser.add_argument('--W_cycle_VGG', type=int, default=10)
 
     # Swap

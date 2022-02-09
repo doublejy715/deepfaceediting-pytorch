@@ -1,16 +1,16 @@
 import torch
 import torch.nn as nn
 
-from nets.block import ResnetBlock, ConvBlock
+from nets.block import ResnetBlock, ConvBlock,ResnetBlock_Adain
 from utils.nets_utils import get_num_adain_params
 
 class Local_G(nn.Module):
-    def __init__(self, input_nc, output_nc, pad_type='reflect', norm='adain', activation='relu'):
+    def __init__(self, input_nc, output_nc, pad_type='reflect', norm='in', activation='relu'):
         super(Local_G, self).__init__()
-        self.ResBlock1 = ResnetBlock(input_nc, norm_type=norm, pad_type=pad_type)
-        self.ResBlock2 = ResnetBlock(input_nc, norm_type=norm, pad_type=pad_type)
-        self.ResBlock3 = ResnetBlock(input_nc, norm_type=norm, pad_type=pad_type)
-        self.ResBlock4 = ResnetBlock(input_nc, norm_type=norm, pad_type=pad_type)
+        self.ResBlock1 = ResnetBlock_Adain(input_nc)
+        self.ResBlock2 = ResnetBlock_Adain(input_nc)
+        self.ResBlock3 = ResnetBlock_Adain(input_nc)
+        self.ResBlock4 = ResnetBlock_Adain(input_nc)
 
         self.ConvBlock1 = ConvBlock(input_nc, 256, 3, stride=2, conv_padding=1, transpose=True, norm=norm, activation=activation)
         self.ConvBlock2 = ConvBlock(256, 256, 3, stride=2, conv_padding=1, transpose=True, norm=norm, activation=activation)
@@ -22,11 +22,11 @@ class Local_G(nn.Module):
         self.style_dim = get_num_adain_params(self)
 
 
-    def forward(self, input):
-        x = self.ResBlock1(input)
-        x = self.ResBlock2(x)
-        x = self.ResBlock3(x)
-        x = self.ResBlock4(x)
+    def forward(self, input, I_s_adain_params):
+        x = self.ResBlock1(input, I_s_adain_params)
+        x = self.ResBlock2(x, I_s_adain_params)
+        x = self.ResBlock3(x, I_s_adain_params)
+        x = self.ResBlock4(x, I_s_adain_params)
 
         x = self.ConvBlock1(x)
         x = self.ConvBlock2(x)
@@ -35,11 +35,11 @@ class Local_G(nn.Module):
 
         return x
 
-    def rgb_forward(self,input):
-        x = self.ResBlock1(input)
-        x = self.ResBlock2(x)
-        x = self.ResBlock3(x)
-        x = self.ResBlock4(x)
+    def rgb_forward(self,input, I_s_adain_params):
+        x = self.ResBlock1(input, I_s_adain_params)
+        x = self.ResBlock2(x, I_s_adain_params)
+        x = self.ResBlock3(x, I_s_adain_params)
+        x = self.ResBlock4(x, I_s_adain_params)
 
         x = self.ConvBlock1(x)
         x = self.ConvBlock2(x)

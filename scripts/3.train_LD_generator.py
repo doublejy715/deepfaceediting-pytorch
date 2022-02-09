@@ -13,18 +13,25 @@ from core.dataset import Dataset
 from opts.train_options import train_options
 from nets.encoder import Image_Encoder, Style_Encoder
 from nets.generator import Local_G
+from nets.decoder import Sketch_Decoder
 from nets.discriminator import MultiscaleDiscriminator
 from utils.nets_utils import assign_adain_params
 
 def train(gpu, args): 
     # set gpu
     torch.cuda.set_device(gpu)
+    args.gpu_id = gpu
 
     # build models
     LD_G = Local_G(256,3).cuda(gpu).train()
     LD_D = MultiscaleDiscriminator(3).cuda(gpu).train()
     Image_E = Image_Encoder(3,256).cuda(gpu).eval()
     Style_E = Style_Encoder(3, LD_G.style_dim).cuda(gpu).train()
+    Sketch_D = Sketch_Decoder(256,1).cuda(gpu).eval()
+    
+
+    for params in Image_E.parameters():
+        params.requires_grad = False
         
     # build a dataset
     train_set = Dataset(f"{args.dataset}/train")
@@ -45,10 +52,10 @@ def train(gpu, args):
         utils.setup_ddp(gpu, args.gpu_num)
 
         # Distributed Data Parallel
-        Image_E = torch.nn.parallel.DistributedDataParallel(Image_E, device_ids=[gpu], broadcast_buffers=False, find_unused_parameters=True).module
         Style_E = torch.nn.parallel.DistributedDataParallel(Style_E, device_ids=[gpu], broadcast_buffers=False, find_unused_parameters=True).module
         LD_G = torch.nn.parallel.DistributedDataParallel(LD_G, device_ids=[gpu], broadcast_buffers=False, find_unused_parameters=True).module
         LD_D = torch.nn.parallel.DistributedDataParallel(LD_D, device_ids=[gpu], broadcast_buffers=False, find_unused_parameters=True).module
+        Sketch_D = torch.nn.parallel.DistributedDataParallel(Sketch_D, device_ids=[gpu]).module
 
         # make sampler 
         train_sampler = torch.utils.data.distributed.DistributedSampler(train_set)
@@ -60,7 +67,7 @@ def train(gpu, args):
     
     # load checkpoint
     ckptio = ckptIO(args)
-    ckptio.load_ckpt(image_E = Image_E, style_E = Style_E, LD_G = LD_G, LD_D = LD_D, LD_opt_G = opt_G, LD_opt_D = opt_D)
+    ckptio.load_ckpt(image_E = Image_E, sketch_D = Sketch_D, style_E = Style_E, LD_G = LD_G, LD_D = LD_D, LD_opt_G = opt_G, LD_opt_D = opt_D)
 
     train_batch_iterator = iter(train_data_loader)
     #test_batch_iterator = iter(test_data_loader)
@@ -92,28 +99,18 @@ def train(gpu, args):
         # run G : True gradient
         # generate mixed img
         I_t_feature = Image_E(I_t)
-
+        I_t_sketch, _ = Sketch_D(I_t_feature)
         I_s_adain_params = Style_E(I_s)
-
-        assign_adain_params(LD_G, I_s_adain_params)
-
-        I_r = LD_G.rgb_forward(I_t_feature)
+        I_r = LD_G.rgb_forward(I_t_feature, I_s_adain_params)
 
         # recon geometry image
         I_t_adain_params = Style_E(I_t)
-
-        assign_adain_params(LD_G, I_t_adain_params)
-
-        I_t_recon = LD_G.rgb_forward(I_t_feature)
+        I_t_recon = LD_G.rgb_forward(I_t_feature, I_t_adain_params)
 
         # recon appear image
         I_s_feature = Image_E(I_s)
-
         I_r_adain_params = Style_E(I_r)
-
-        assign_adain_params(LD_G, I_r_adain_params)
-
-        I_s_recon = LD_G.rgb_forward(I_s_feature)
+        I_s_recon = LD_G.rgb_forward(I_s_feature, I_r_adain_params)
 
         # D
         g_I_t = LD_D(I_t)
@@ -153,11 +150,11 @@ def train(gpu, args):
             #     test_I_s, test_I_t = next(test_batch_iterator)
 
             
-            utils.save_img(args, global_step, "imgs", [I_s, I_t, I_s_recon, I_r])
+            utils.save_img(args, global_step, "imgs", [I_s, I_s_recon, I_t, I_t_sketch, I_t_recon, I_r])
 
         # save ckpt
         if global_step % args.ckpt_cycle == 0:
-            ckptio.save_ckpt(global_step, image_E = Image_E, style_E = Style_E, LD_G = LD_G, LD_D = LD_D, LD_opt_G = opt_G, LD_opt_D = opt_D)
+            ckptio.save_ckpt(global_step, image_E = Image_E, sketch_D = Sketch_D, style_E = Style_E, LD_G = LD_G, LD_D = LD_D, LD_opt_G = opt_G, LD_opt_D = opt_D)
 
 if __name__ == "__main__":
     
