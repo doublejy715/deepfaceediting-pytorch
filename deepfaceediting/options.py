@@ -11,13 +11,13 @@ def train_options():
     parser.add_argument('--ckpt_id', type=str, default='')
 
     # dataset
-    parser.add_argument("--dataset", type=str, default = "datasets", help = "the path of geometry image")
+    parser.add_argument("--dataset", type=str, default = "./datasets/train", help = "the path of geometry image")
     
     # log
     parser.add_argument('--loss_cycle', type=str, default=10)
     parser.add_argument('--test_cycle', type=str, default=100)
-    parser.add_argument('--ckpt_cycle', type=str, default=1000)
-    parser.add_argument('--save_root', type=str, default="training_result")
+    parser.add_argument('--ckpt_cycle', type=str, default=5000)
+    parser.add_argument('--save_root', type=str, default="train")
 
     # hyperparameters
     parser.add_argument('--batch_size', type=str, default=8)
@@ -29,14 +29,14 @@ def train_options():
     # Generator
     # Recon
     parser.add_argument('--W_recon', type=int, default=1)
-    parser.add_argument('--W_recon_Lab', type=int, default=1)
-    parser.add_argument('--W_recon_FM', type=int, default=10)
+    parser.add_argument('--W_recon_Lab', type=int, default=0)
+    parser.add_argument('--W_recon_FM', type=int, default=0)
     parser.add_argument('--W_recon_VGG', type=int, default=10)
 
     # Cycle
     parser.add_argument('--W_cycle', type=int, default=1)
-    parser.add_argument('--W_cycle_Lab', type=int, default=1)
-    parser.add_argument('--W_cycle_FM', type=int, default=10)
+    parser.add_argument('--W_cycle_Lab', type=int, default=0)
+    parser.add_argument('--W_cycle_FM', type=int, default=0)
     parser.add_argument('--W_cycle_VGG', type=int, default=10)
 
     # Swap
@@ -45,7 +45,7 @@ def train_options():
     parser.add_argument('--W_swap_cycle', type=int, default=1)
 
     # adv
-    parser.add_argument('--W_adv', type=int, default=1)
+    parser.add_argument('--W_adv', type=int, default=5)
     parser.add_argument('--W_adv_geo', type=int, default=0.5)
     parser.add_argument('--W_adv_app', type=int, default=0.5)
     parser.add_argument('--W_adv_recon_geo', type=int, default=0.33)
@@ -65,15 +65,15 @@ def train_options():
     # learning rate
     parser.add_argument('--lr', type=str, default=4e-4)
     parser.add_argument('--lr_G', type=str, default=4e-4)
-    parser.add_argument('--lr_D', type=str, default=4e-5)
+    parser.add_argument('--lr_D', type=str, default=1e-5)
     parser.add_argument('--beta1', type=str, default=0)
 
     # multi GPU
     parser.add_argument('--isMaster', default=False)
-    parser.add_argument('--use_mGPU', action='store_false')
+    parser.add_argument('--use_mGPU', action='store_true')
 
     # use wandb
-    parser.add_argument('--use_wandb', action='store_false')
+    parser.add_argument('--use_wandb', action='store_true')
 
     # etc
     parser.add_argument('--num_works', type=int, default=16, help='number of threads for data loader to use')
